@@ -33,13 +33,29 @@ All of this happens autonomously. You press one button. Five AI agents do the re
 
 ## 🎬 See It In Action
 
-Here's the full dashboard walkthrough — pipeline execution, every tab, every chart, scrolled through top to bottom:
+One click runs the entire pipeline. Here's what you get:
 
+**📊 Pipeline Dashboard — Metrics, Executive Summary & Risk Assessment**
 <p align="center">
-  <img src="assets/oracle_demo.webp" alt="ORACLE Dashboard Demo — Full Walkthrough" width="100%"/>
+  <img src="assets/dashboard_overview.png" alt="Dashboard Overview — Metrics, Summary, Alerts" width="100%"/>
 </p>
 
-> ☝️ *This shows the real pipeline running: 200 sequences analyzed → 537 mutations detected → 8 lineages scored → 10 vaccine candidates designed — all in under 1 second.*
+**📡 Variant Tracker — Lineage Distribution & Prevalence Analysis**
+<p align="center">
+  <img src="assets/variant_tracker.png" alt="Variant Tracker — Charts & Prevalence" width="100%"/>
+</p>
+
+**🛡️ Immune Escape — Antibody Class Breakdown & Risk Matrix**
+<p align="center">
+  <img src="assets/immune_escape.png" alt="Immune Escape — 4 Antibody Classes" width="100%"/>
+</p>
+
+**💉 Vaccine Candidates — Radar Comparison of Top Designs**
+<p align="center">
+  <img src="assets/vaccine_radar.png" alt="Vaccine Candidates — Multi-Objective Radar" width="100%"/>
+</p>
+
+> ☝️ *This is the real pipeline output: 200 sequences → 537 mutations → 8 lineages scored → 10 vaccine candidates — all in under 1 second.*
 
 ---
 
