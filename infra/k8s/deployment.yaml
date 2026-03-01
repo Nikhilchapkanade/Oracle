@@ -1,0 +1,132 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: oracle-dashboard
+  namespace: oracle
+  labels:
+    app: oracle
+    component: dashboard
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: oracle
+      component: dashboard
+  template:
+    metadata:
+      labels:
+        app: oracle
+        component: dashboard
+    spec:
+      containers:
+        - name: dashboard
+          image: oracle-viral-evolution:latest
+          ports:
+            - containerPort: 8501
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "512Mi"
+            limits:
+              cpu: "1000m"
+              memory: "2Gi"
+          livenessProbe:
+            httpGet:
+              path: /_stcore/health
+              port: 8501
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /_stcore/health
+              port: 8501
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          volumeMounts:
+            - name: data
+              mountPath: /app/data
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: oracle-data-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: oracle-dashboard-svc
+  namespace: oracle
+spec:
+  selector:
+    app: oracle
+    component: dashboard
+  ports:
+    - port: 80
+      targetPort: 8501
+  type: ClusterIP
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: oracle-ingress
+  namespace: oracle
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  rules:
+    - host: oracle.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: oracle-dashboard-svc
+                port:
+                  number: 80
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: oracle-dashboard-hpa
+  namespace: oracle
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: oracle-dashboard
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: oracle-pipeline-cron
+  namespace: oracle
+spec:
+  schedule: "0 */6 * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+            - name: pipeline
+              image: oracle-viral-evolution:latest
+              command: ["python", "-m", "src.agents.orchestrator", "500"]
+              resources:
+                requests:
+                  cpu: "2000m"
+                  memory: "4Gi"
+                limits:
+                  cpu: "4000m"
+                  memory: "8Gi"
+                  nvidia.com/gpu: "1"
+          restartPolicy: OnFailure
+          nodeSelector:
+            gpu: "true"

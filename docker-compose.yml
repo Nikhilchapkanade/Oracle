@@ -1,0 +1,121 @@
+version: "3.9"
+
+services:
+  # ─── Main ORACLE Dashboard ───
+  oracle-dashboard:
+    build: .
+    container_name: oracle-dashboard
+    ports:
+      - "8501:8501"
+    environment:
+      - ORACLE_DEBUG=false
+    volumes:
+      - ./data:/app/data
+      - ./reports:/app/reports
+      - ./models:/app/models
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8501/_stcore/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ─── ORACLE Pipeline Runner ───
+  oracle-pipeline:
+    build: .
+    container_name: oracle-pipeline
+    command: ["python", "-m", "src.agents.orchestrator", "200"]
+    environment:
+      - ORACLE_DEBUG=true
+    volumes:
+      - ./data:/app/data
+      - ./reports:/app/reports
+    profiles:
+      - pipeline
+
+  # ─── MCP Servers ───
+  mcp-genomic:
+    build: .
+    container_name: oracle-mcp-genomic
+    command: ["python", "-m", "src.mcp_servers.genomic_server"]
+    ports:
+      - "8100:8100"
+    volumes:
+      - ./data:/app/data
+    profiles:
+      - mcp
+
+  mcp-protein:
+    build: .
+    container_name: oracle-mcp-protein
+    command: ["python", "-m", "src.mcp_servers.protein_server"]
+    ports:
+      - "8101:8101"
+    profiles:
+      - mcp
+
+  mcp-epidemiology:
+    build: .
+    container_name: oracle-mcp-epidemiology
+    command: ["python", "-m", "src.mcp_servers.epidemiology_server"]
+    ports:
+      - "8102:8102"
+    profiles:
+      - mcp
+
+  mcp-phylogenetics:
+    build: .
+    container_name: oracle-mcp-phylogenetics
+    command: ["python", "-m", "src.mcp_servers.phylogenetics_server"]
+    ports:
+      - "8103:8103"
+    profiles:
+      - mcp
+
+  # ─── MLflow Tracking ───
+  mlflow:
+    image: ghcr.io/mlflow/mlflow:v2.10.0
+    container_name: oracle-mlflow
+    ports:
+      - "5000:5000"
+    command: >
+      mlflow server
+      --host 0.0.0.0
+      --port 5000
+      --backend-store-uri sqlite:///mlflow/mlflow.db
+      --default-artifact-root /mlflow/artifacts
+    volumes:
+      - mlflow_data:/mlflow
+    profiles:
+      - mlops
+
+  # ─── Monitoring: Prometheus ───
+  prometheus:
+    image: prom/prometheus:v2.48.0
+    container_name: oracle-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./infra/monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+    profiles:
+      - monitoring
+
+  # ─── Monitoring: Grafana ───
+  grafana:
+    image: grafana/grafana:10.2.0
+    container_name: oracle-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=oracle2024
+      - GF_SECURITY_ADMIN_USER=admin
+    volumes:
+      - grafana_data:/var/lib/grafana
+    depends_on:
+      - prometheus
+    profiles:
+      - monitoring
+
+volumes:
+  mlflow_data:
+  grafana_data:

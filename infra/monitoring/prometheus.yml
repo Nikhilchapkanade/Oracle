@@ -1,0 +1,37 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: "oracle-dashboard"
+    static_configs:
+      - targets: ["oracle-dashboard:8501"]
+    metrics_path: /_stcore/health
+
+  - job_name: "oracle-mcp-genomic"
+    static_configs:
+      - targets: ["mcp-genomic:8100"]
+
+  - job_name: "oracle-mcp-protein"
+    static_configs:
+      - targets: ["mcp-protein:8101"]
+
+  - job_name: "oracle-mcp-epidemiology"
+    static_configs:
+      - targets: ["mcp-epidemiology:8102"]
+
+  - job_name: "oracle-mcp-phylogenetics"
+    static_configs:
+      - targets: ["mcp-phylogenetics:8103"]
+
+  - job_name: "mlflow"
+    static_configs:
+      - targets: ["mlflow:5000"]
+
+rule_files:
+  - "alerts.yml"
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: []

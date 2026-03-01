@@ -1,0 +1,51 @@
+# Byte-compiled / optimized
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+
+# Virtual environments
+venv/
+.env/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Database
+*.db
+*.sqlite
+
+# Data directories
+data/
+reports/
+models/
+model_registry/
+
+# MLflow
+mlruns/
+
+# Runtime
+*.log
+*.pid
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.backup
+
+# Node
+node_modules/
+
+# Distribution
+dist/
+build/
+*.egg-info/

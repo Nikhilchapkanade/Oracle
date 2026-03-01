@@ -1,0 +1,35 @@
+stages:
+  - get_sequences:
+      cmd: python -c "from src.ingestion.sequence_ingestion import SequenceIngestionPipeline; p = SequenceIngestionPipeline(); seqs = p.generate_sequences(500); print(f'Generated {len(seqs)} sequences')"
+      deps:
+        - src/ingestion/sequence_ingestion.py
+      outs:
+        - data/sequences.json
+
+  - train_evolution_model:
+      cmd: python -c "
+        from src.ingestion.sequence_ingestion import SequenceIngestionPipeline;
+        from src.ml.evolution_forecaster import EvolutionForecaster;
+        p = SequenceIngestionPipeline();
+        seqs = p.generate_sequences(500);
+        f = EvolutionForecaster();
+        metrics = f.train(seqs);
+        preds = f.predict(top_k=20);
+        print(f'Training: {metrics}');
+        print(f'Predictions: {len(preds)}')
+        "
+      deps:
+        - src/ml/evolution_forecaster.py
+        - data/sequences.json
+
+  - run_pipeline:
+      cmd: python -m src.agents.orchestrator 200
+      deps:
+        - src/agents/orchestrator.py
+        - src/agents/surveillance_agent.py
+        - src/agents/evolution_agent.py
+        - src/agents/escape_agent.py
+        - src/agents/vaccine_agent.py
+        - src/agents/report_agent.py
+      outs:
+        - reports/
