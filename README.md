@@ -226,7 +226,7 @@ Everything is structured, machine-readable, and ready for downstream consumption
 
 ## 📄 License
 
-MIT — use it however you want.
+MIT 
 
 ---
 
