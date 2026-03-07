@@ -9,11 +9,11 @@ import uuid
 from datetime import datetime
 
 from src.agents.base_agent import BaseAgent
-from src.agents.surveillance_agent import SurveillanceAgent
-from src.agents.evolution_agent import EvolutionAgent
 from src.agents.escape_agent import EscapeAgent
-from src.agents.vaccine_agent import VaccineAgent
+from src.agents.evolution_agent import EvolutionAgent
 from src.agents.report_agent import ReportAgent
+from src.agents.surveillance_agent import SurveillanceAgent
+from src.agents.vaccine_agent import VaccineAgent
 from src.core.models import PipelineMetrics
 
 logger = logging.getLogger(__name__)
@@ -62,10 +62,10 @@ class OracleOrchestrator:
             start_time=start_time,
         )
 
-        logger.info(f"═══════════════════════════════════════════════════════")
+        logger.info("═══════════════════════════════════════════════════════")
         logger.info(f"  ORACLE Pipeline {self.pipeline_id} — STARTING")
         logger.info(f"  Sequences: {num_sequences}")
-        logger.info(f"═══════════════════════════════════════════════════════")
+        logger.info("═══════════════════════════════════════════════════════")
 
         # Log pipeline start
         if self.db:
@@ -77,42 +77,61 @@ class OracleOrchestrator:
             # ─── Stage 1: Surveillance ───
             logger.info("┌─── Stage 1/5: SURVEILLANCE ───────────────────────────")
             surveillance_result = self._run_agent(
-                "surveillance",
-                {"num_sequences": num_sequences}
+                "surveillance", {"num_sequences": num_sequences}
             )
             self.results["surveillance"] = surveillance_result.get("result", {})
-            agent_durations["surveillance"] = surveillance_result.get("duration_seconds", 0)
-            self.metrics.total_sequences_processed = self.results["surveillance"].get("total_sequences", 0)
-            self.metrics.novel_mutations_detected = self.results["surveillance"].get("unique_mutations", 0)
-            logger.info(f"└─── Surveillance complete: {self.metrics.total_sequences_processed} sequences, "
-                       f"{self.metrics.novel_mutations_detected} mutations")
+            agent_durations["surveillance"] = surveillance_result.get(
+                "duration_seconds", 0
+            )
+            self.metrics.total_sequences_processed = self.results["surveillance"].get(
+                "total_sequences", 0
+            )
+            self.metrics.novel_mutations_detected = self.results["surveillance"].get(
+                "unique_mutations", 0
+            )
+            logger.info(
+                f"└─── Surveillance complete: {self.metrics.total_sequences_processed} sequences, "
+                f"{self.metrics.novel_mutations_detected} mutations"
+            )
 
             # ─── Stage 2: Evolution Prediction ───
             logger.info("┌─── Stage 2/5: EVOLUTION PREDICTION ──────────────────")
             evolution_input = {
                 "sequences": self.results["surveillance"].get("sequences", []),
                 "top_mutations": self.results["surveillance"].get("top_mutations", []),
-                "convergent_mutations": self.results["surveillance"].get("convergent_mutations", []),
-                "frequency_matrix": self.results["surveillance"].get("frequency_matrix", {}),
+                "convergent_mutations": self.results["surveillance"].get(
+                    "convergent_mutations", []
+                ),
+                "frequency_matrix": self.results["surveillance"].get(
+                    "frequency_matrix", {}
+                ),
             }
             evolution_result = self._run_agent("evolution", evolution_input)
             self.results["evolution"] = evolution_result.get("result", {})
             agent_durations["evolution"] = evolution_result.get("duration_seconds", 0)
-            self.metrics.predictions_generated = self.results["evolution"].get("total_predictions", 0)
-            logger.info(f"└─── Evolution complete: {self.metrics.predictions_generated} predictions")
+            self.metrics.predictions_generated = self.results["evolution"].get(
+                "total_predictions", 0
+            )
+            logger.info(
+                f"└─── Evolution complete: {self.metrics.predictions_generated} predictions"
+            )
 
             # ─── Stage 3: Immune Escape ───
             logger.info("┌─── Stage 3/5: IMMUNE ESCAPE ANALYSIS ────────────────")
             escape_input = {
                 "sequences": self.results["surveillance"].get("sequences", []),
                 "predictions": self.results["evolution"].get("predictions", []),
-                "lineage_distribution": self.results["surveillance"].get("lineage_distribution", {}),
+                "lineage_distribution": self.results["surveillance"].get(
+                    "lineage_distribution", {}
+                ),
             }
             escape_result = self._run_agent("escape", escape_input)
             self.results["escape"] = escape_result.get("result", {})
             agent_durations["escape"] = escape_result.get("duration_seconds", 0)
-            logger.info(f"└─── Escape analysis complete: "
-                       f"{len(self.results['escape'].get('escape_scores', []))} lineages scored")
+            logger.info(
+                f"└─── Escape analysis complete: "
+                f"{len(self.results['escape'].get('escape_scores', []))} lineages scored"
+            )
 
             # ─── Stage 4: Vaccine Design ───
             logger.info("┌─── Stage 4/5: VACCINE DESIGN ────────────────────────")
@@ -123,8 +142,12 @@ class OracleOrchestrator:
             vaccine_result = self._run_agent("vaccine", vaccine_input)
             self.results["vaccine"] = vaccine_result.get("result", {})
             agent_durations["vaccine"] = vaccine_result.get("duration_seconds", 0)
-            self.metrics.vaccines_designed = self.results["vaccine"].get("total_candidates", 0)
-            logger.info(f"└─── Vaccine design complete: {self.metrics.vaccines_designed} candidates")
+            self.metrics.vaccines_designed = self.results["vaccine"].get(
+                "total_candidates", 0
+            )
+            logger.info(
+                f"└─── Vaccine design complete: {self.metrics.vaccines_designed} candidates"
+            )
 
             # ─── Stage 5: Report Generation ───
             logger.info("┌─── Stage 5/5: REPORT GENERATION ─────────────────────")
@@ -138,7 +161,7 @@ class OracleOrchestrator:
             report_result = self._run_agent("report", report_input)
             self.results["report"] = report_result.get("result", {})
             agent_durations["report"] = report_result.get("duration_seconds", 0)
-            logger.info(f"└─── Report generation complete")
+            logger.info("└─── Report generation complete")
 
             # Finalize metrics
             pipeline_end = time.time()
@@ -148,14 +171,14 @@ class OracleOrchestrator:
 
             total_duration = pipeline_end - pipeline_start
 
-            logger.info(f"═══════════════════════════════════════════════════════")
+            logger.info("═══════════════════════════════════════════════════════")
             logger.info(f"  ORACLE Pipeline {self.pipeline_id} — COMPLETED")
             logger.info(f"  Total Duration: {total_duration:.2f}s")
             logger.info(f"  Sequences: {self.metrics.total_sequences_processed}")
             logger.info(f"  Mutations: {self.metrics.novel_mutations_detected}")
             logger.info(f"  Predictions: {self.metrics.predictions_generated}")
             logger.info(f"  Vaccines: {self.metrics.vaccines_designed}")
-            logger.info(f"═══════════════════════════════════════════════════════")
+            logger.info("═══════════════════════════════════════════════════════")
 
             # Update database
             if self.db:
@@ -219,8 +242,10 @@ class OracleOrchestrator:
 
         if self.db:
             self.db.log_agent_activity(
-                self.pipeline_id, agent_name, result["status"],
-                f"Completed in {result.get('duration_seconds', 0)}s"
+                self.pipeline_id,
+                agent_name,
+                result["status"],
+                f"Completed in {result.get('duration_seconds', 0)}s",
             )
 
         return result
@@ -230,10 +255,18 @@ class OracleOrchestrator:
         return {
             "pipeline_id": self.pipeline_id,
             "metrics": {
-                "sequences_processed": self.metrics.total_sequences_processed if self.metrics else 0,
-                "mutations_detected": self.metrics.novel_mutations_detected if self.metrics else 0,
-                "predictions_generated": self.metrics.predictions_generated if self.metrics else 0,
-                "vaccines_designed": self.metrics.vaccines_designed if self.metrics else 0,
+                "sequences_processed": (
+                    self.metrics.total_sequences_processed if self.metrics else 0
+                ),
+                "mutations_detected": (
+                    self.metrics.novel_mutations_detected if self.metrics else 0
+                ),
+                "predictions_generated": (
+                    self.metrics.predictions_generated if self.metrics else 0
+                ),
+                "vaccines_designed": (
+                    self.metrics.vaccines_designed if self.metrics else 0
+                ),
                 "status": self.metrics.status if self.metrics else "not started",
             },
             "agents": {name: agent.get_status() for name, agent in self.agents.items()},

@@ -3,14 +3,19 @@ ORACLE — Sequence Ingestion Pipeline
 Simulated GISAID/Nextstrain data ingestion with realistic viral sequence generation.
 """
 
-import random
 import hashlib
 import logging
+import random
 from datetime import datetime, timedelta
 from typing import Optional
 
 from src.core.models import (
-    ViralSequence, Mutation, MutationType, ProteinRegion, Lineage, WHORiskLevel
+    Lineage,
+    Mutation,
+    MutationType,
+    ProteinRegion,
+    ViralSequence,
+    WHORiskLevel,
 )
 
 logger = logging.getLogger(__name__)
@@ -68,9 +73,25 @@ LINEAGE_DEFINITIONS = {
     "B.1.1.529": {
         "who_label": "Omicron BA.1",
         "risk_level": WHORiskLevel.VOC,
-        "mutations": ["G339D", "S371L", "S373P", "K417N", "N440K", "S477N",
-                       "T478K", "E484A", "Q493R", "Q498R", "N501Y", "Y505H",
-                       "D614G", "H655Y", "P681H", "N764K", "D796Y"],
+        "mutations": [
+            "G339D",
+            "S371L",
+            "S373P",
+            "K417N",
+            "N440K",
+            "S477N",
+            "T478K",
+            "E484A",
+            "Q493R",
+            "Q498R",
+            "N501Y",
+            "Y505H",
+            "D614G",
+            "H655Y",
+            "P681H",
+            "N764K",
+            "D796Y",
+        ],
         "country": "South Africa",
         "fitness": 2.5,
         "escape": 0.65,
@@ -78,9 +99,28 @@ LINEAGE_DEFINITIONS = {
     "BA.2": {
         "who_label": "Omicron BA.2",
         "risk_level": WHORiskLevel.VOC,
-        "mutations": ["G339D", "S371F", "S373P", "S375F", "T376A", "D405N",
-                       "R408S", "K417N", "N440K", "S477N", "T478K", "E484A",
-                       "Q493R", "Q498R", "N501Y", "Y505H", "D614G", "H655Y", "N679K", "P681H"],
+        "mutations": [
+            "G339D",
+            "S371F",
+            "S373P",
+            "S375F",
+            "T376A",
+            "D405N",
+            "R408S",
+            "K417N",
+            "N440K",
+            "S477N",
+            "T478K",
+            "E484A",
+            "Q493R",
+            "Q498R",
+            "N501Y",
+            "Y505H",
+            "D614G",
+            "H655Y",
+            "N679K",
+            "P681H",
+        ],
         "country": "Denmark",
         "fitness": 2.7,
         "escape": 0.60,
@@ -88,9 +128,28 @@ LINEAGE_DEFINITIONS = {
     "BA.5": {
         "who_label": "Omicron BA.5",
         "risk_level": WHORiskLevel.VOC,
-        "mutations": ["G339D", "S371F", "S373P", "S375F", "T376A", "D405N",
-                       "R408S", "K417N", "N440K", "L452R", "S477N", "T478K",
-                       "E484A", "F486V", "Q498R", "N501Y", "Y505H", "D614G", "H655Y", "P681H"],
+        "mutations": [
+            "G339D",
+            "S371F",
+            "S373P",
+            "S375F",
+            "T376A",
+            "D405N",
+            "R408S",
+            "K417N",
+            "N440K",
+            "L452R",
+            "S477N",
+            "T478K",
+            "E484A",
+            "F486V",
+            "Q498R",
+            "N501Y",
+            "Y505H",
+            "D614G",
+            "H655Y",
+            "P681H",
+        ],
         "country": "Portugal",
         "fitness": 2.9,
         "escape": 0.70,
@@ -98,10 +157,33 @@ LINEAGE_DEFINITIONS = {
     "XBB.1.5": {
         "who_label": "Kraken",
         "risk_level": WHORiskLevel.VOC,
-        "mutations": ["G339H", "R346T", "L368I", "S371F", "S373P", "S375F",
-                       "T376A", "D405N", "R408S", "K417N", "N440K", "V445P",
-                       "G446S", "N460K", "S477N", "T478K", "E484A", "F486P",
-                       "F490S", "Q498R", "N501Y", "Y505H", "D614G", "H655Y", "P681H"],
+        "mutations": [
+            "G339H",
+            "R346T",
+            "L368I",
+            "S371F",
+            "S373P",
+            "S375F",
+            "T376A",
+            "D405N",
+            "R408S",
+            "K417N",
+            "N440K",
+            "V445P",
+            "G446S",
+            "N460K",
+            "S477N",
+            "T478K",
+            "E484A",
+            "F486P",
+            "F490S",
+            "Q498R",
+            "N501Y",
+            "Y505H",
+            "D614G",
+            "H655Y",
+            "P681H",
+        ],
         "country": "United States",
         "fitness": 3.2,
         "escape": 0.75,
@@ -109,10 +191,32 @@ LINEAGE_DEFINITIONS = {
     "JN.1": {
         "who_label": "JN.1",
         "risk_level": WHORiskLevel.VOI,
-        "mutations": ["R346T", "L368I", "S371F", "S373P", "S375F", "T376A",
-                       "D405N", "R408S", "K417N", "N440K", "V445H", "G446S",
-                       "N460K", "S477N", "T478K", "E484A", "F486P", "Q498R",
-                       "N501Y", "Y505H", "D614G", "H655Y", "P681H", "L455S"],
+        "mutations": [
+            "R346T",
+            "L368I",
+            "S371F",
+            "S373P",
+            "S375F",
+            "T376A",
+            "D405N",
+            "R408S",
+            "K417N",
+            "N440K",
+            "V445H",
+            "G446S",
+            "N460K",
+            "S477N",
+            "T478K",
+            "E484A",
+            "F486P",
+            "Q498R",
+            "N501Y",
+            "Y505H",
+            "D614G",
+            "H655Y",
+            "P681H",
+            "L455S",
+        ],
         "country": "Luxembourg",
         "fitness": 3.5,
         "escape": 0.78,
@@ -120,21 +224,59 @@ LINEAGE_DEFINITIONS = {
 }
 
 COUNTRIES = [
-    "United States", "United Kingdom", "Germany", "France", "India", "Brazil",
-    "South Africa", "Japan", "Australia", "Canada", "Italy", "Spain",
-    "Netherlands", "Denmark", "South Korea", "China", "Mexico", "Argentina",
-    "Turkey", "Indonesia", "Nigeria", "Kenya", "Thailand", "Vietnam",
+    "United States",
+    "United Kingdom",
+    "Germany",
+    "France",
+    "India",
+    "Brazil",
+    "South Africa",
+    "Japan",
+    "Australia",
+    "Canada",
+    "Italy",
+    "Spain",
+    "Netherlands",
+    "Denmark",
+    "South Korea",
+    "China",
+    "Mexico",
+    "Argentina",
+    "Turkey",
+    "Indonesia",
+    "Nigeria",
+    "Kenya",
+    "Thailand",
+    "Vietnam",
 ]
 
 CONTINENTS = {
-    "United States": "North America", "Canada": "North America", "Mexico": "North America",
-    "Brazil": "South America", "Argentina": "South America",
-    "United Kingdom": "Europe", "Germany": "Europe", "France": "Europe",
-    "Italy": "Europe", "Spain": "Europe", "Netherlands": "Europe", "Denmark": "Europe",
-    "India": "Asia", "Japan": "Asia", "South Korea": "Asia", "China": "Asia",
-    "Thailand": "Asia", "Vietnam": "Asia", "Indonesia": "Asia", "Turkey": "Asia",
-    "South Africa": "Africa", "Nigeria": "Africa", "Kenya": "Africa",
-    "Australia": "Oceania", "Luxembourg": "Europe", "Portugal": "Europe",
+    "United States": "North America",
+    "Canada": "North America",
+    "Mexico": "North America",
+    "Brazil": "South America",
+    "Argentina": "South America",
+    "United Kingdom": "Europe",
+    "Germany": "Europe",
+    "France": "Europe",
+    "Italy": "Europe",
+    "Spain": "Europe",
+    "Netherlands": "Europe",
+    "Denmark": "Europe",
+    "India": "Asia",
+    "Japan": "Asia",
+    "South Korea": "Asia",
+    "China": "Asia",
+    "Thailand": "Asia",
+    "Vietnam": "Asia",
+    "Indonesia": "Asia",
+    "Turkey": "Asia",
+    "South Africa": "Africa",
+    "Nigeria": "Africa",
+    "Kenya": "Africa",
+    "Australia": "Oceania",
+    "Luxembourg": "Europe",
+    "Portugal": "Europe",
 }
 
 AMINO_ACIDS = "ACDEFGHIKLMNPQRSTVWY"
@@ -153,7 +295,9 @@ def _parse_mutation(mut_str: str) -> Optional[Mutation]:
         if mut_str.endswith("del"):
             position = int(mut_str[1:-3])
             return Mutation(
-                position=position, reference_aa=ref_aa, mutant_aa="-",
+                position=position,
+                reference_aa=ref_aa,
+                mutant_aa="-",
                 mutation_type=MutationType.DELETION,
                 protein_region=_get_protein_region(position),
             )
@@ -195,21 +339,27 @@ def _apply_mutations_to_sequence(reference: str, mutations: list[Mutation]) -> s
     return "".join(seq)
 
 
-def _generate_additional_mutations(base_mutations: list[Mutation], count: int = 2) -> list[Mutation]:
+def _generate_additional_mutations(
+    base_mutations: list[Mutation], count: int = 2
+) -> list[Mutation]:
     """Generate random additional mutations to add variability."""
     extra = []
     for _ in range(count):
         pos = random.randint(1, 1273)
         ref_aa = REFERENCE_SPIKE[pos - 1] if pos <= len(REFERENCE_SPIKE) else "X"
-        mut_aa = random.choice(AMINO_ACIDS.replace(ref_aa, "") if ref_aa in AMINO_ACIDS else AMINO_ACIDS)
-        extra.append(Mutation(
-            position=pos,
-            reference_aa=ref_aa,
-            mutant_aa=mut_aa,
-            mutation_type=MutationType.NONSYNONYMOUS,
-            protein_region=_get_protein_region(pos),
-            frequency=random.uniform(0.01, 0.3),
-        ))
+        mut_aa = random.choice(
+            AMINO_ACIDS.replace(ref_aa, "") if ref_aa in AMINO_ACIDS else AMINO_ACIDS
+        )
+        extra.append(
+            Mutation(
+                position=pos,
+                reference_aa=ref_aa,
+                mutant_aa=mut_aa,
+                mutation_type=MutationType.NONSYNONYMOUS,
+                protein_region=_get_protein_region(pos),
+                frequency=random.uniform(0.01, 0.3),
+            )
+        )
     return extra
 
 
@@ -244,9 +394,14 @@ class SequenceIngestionPipeline:
         if lineage_weights is None:
             # More recent lineages have higher weights
             lineage_weights = {
-                "B.1.1.7": 0.05, "B.1.351": 0.03, "B.1.617.2": 0.08,
-                "B.1.1.529": 0.10, "BA.2": 0.12, "BA.5": 0.15,
-                "XBB.1.5": 0.22, "JN.1": 0.25,
+                "B.1.1.7": 0.05,
+                "B.1.351": 0.03,
+                "B.1.617.2": 0.08,
+                "B.1.1.529": 0.10,
+                "BA.2": 0.12,
+                "BA.5": 0.15,
+                "XBB.1.5": 0.22,
+                "JN.1": 0.25,
             }
 
         lineages = list(lineage_weights.keys())
@@ -285,7 +440,9 @@ class SequenceIngestionPipeline:
             continent = CONTINENTS.get(country, "Unknown")
 
             # Generate unique ID
-            seq_hash = hashlib.md5(f"{lineage_name}_{i}_{self._seq_counter}".encode()).hexdigest()[:8]
+            seq_hash = hashlib.md5(
+                f"{lineage_name}_{i}_{self._seq_counter}".encode()
+            ).hexdigest()[:8]
             seq_id = f"ORACLE_{lineage_name.replace('.', '')}_{seq_hash}"
 
             seq = ViralSequence(
@@ -300,7 +457,9 @@ class SequenceIngestionPipeline:
                 quality_score=random.uniform(0.85, 1.0),
                 metadata={
                     "submitting_lab": f"Lab_{random.randint(1, 500)}",
-                    "sequencing_tech": random.choice(["Illumina", "Nanopore", "PacBio"]),
+                    "sequencing_tech": random.choice(
+                        ["Illumina", "Nanopore", "PacBio"]
+                    ),
                     "coverage": random.uniform(95.0, 100.0),
                 },
             )
@@ -319,7 +478,8 @@ class SequenceIngestionPipeline:
                 risk_level=data.get("risk_level", WHORiskLevel.NONE),
                 defining_mutations=data.get("mutations", []),
                 first_detected_country=data.get("country", ""),
-                first_detected=datetime(2020, 6, 1) + timedelta(days=random.randint(0, 1000)),
+                first_detected=datetime(2020, 6, 1)
+                + timedelta(days=random.randint(0, 1000)),
                 sequence_count=random.randint(1000, 500000),
                 growth_rate=random.uniform(-0.05, 0.2),
                 relative_fitness=data.get("fitness", 1.0),
@@ -351,7 +511,7 @@ class SequenceIngestionPipeline:
                 self.db.insert_lineage(lin)
 
         result["lineages_created"] = len(lineages)
-        result["lineage_names"] = [l.name for l in lineages]
+        result["lineage_names"] = [lin.name for lin in lineages]
 
         stats = {}
         for seq in sequences:

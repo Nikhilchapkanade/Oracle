@@ -5,9 +5,8 @@ Reference alignment, SNP calling, mutation classification, and spike protein reg
 
 import logging
 from collections import Counter, defaultdict
-from typing import Optional
 
-from src.core.models import Mutation, MutationType, ProteinRegion, ViralSequence
+from src.core.models import ProteinRegion, ViralSequence
 
 logger = logging.getLogger(__name__)
 
@@ -16,7 +15,27 @@ class MutationAnalyzer:
     """Analyzes mutations across viral sequences — frequency, co-occurrence, hotspots."""
 
     # Key functional sites in spike protein
-    ACE2_CONTACT = {417, 446, 449, 453, 455, 456, 475, 476, 484, 486, 487, 489, 493, 496, 498, 500, 501, 502, 505}
+    ACE2_CONTACT = {
+        417,
+        446,
+        449,
+        453,
+        455,
+        456,
+        475,
+        476,
+        484,
+        486,
+        487,
+        489,
+        493,
+        496,
+        498,
+        500,
+        501,
+        502,
+        505,
+    }
     ANTIBODY_EPITOPES = {
         "class1": {417, 453, 455, 456, 486, 489, 493, 496, 498, 501, 505},
         "class2": {484, 486, 487, 489, 490, 493, 494},
@@ -53,7 +72,7 @@ class MutationAnalyzer:
 
             # Co-occurrence tracking
             for i, m1 in enumerate(mutations_notations):
-                for m2 in mutations_notations[i + 1:]:
+                for m2 in mutations_notations[i + 1 :]:
                     key = tuple(sorted([m1, m2]))
                     self.co_occurrences[key[0]][key[1]] += 1
 
@@ -87,16 +106,22 @@ class MutationAnalyzer:
             if freq >= threshold:
                 region = self._position_to_region(pos)
                 is_ace2 = pos in self.ACE2_CONTACT
-                in_epitope = any(pos in sites for sites in self.ANTIBODY_EPITOPES.values())
-                hotspots.append({
-                    "position": pos,
-                    "frequency": round(freq, 4),
-                    "count": count,
-                    "region": region.value,
-                    "ace2_contact": is_ace2,
-                    "in_antibody_epitope": in_epitope,
-                    "functional_impact": "HIGH" if (is_ace2 or in_epitope) else "MODERATE",
-                })
+                in_epitope = any(
+                    pos in sites for sites in self.ANTIBODY_EPITOPES.values()
+                )
+                hotspots.append(
+                    {
+                        "position": pos,
+                        "frequency": round(freq, 4),
+                        "count": count,
+                        "region": region.value,
+                        "ace2_contact": is_ace2,
+                        "in_antibody_epitope": in_epitope,
+                        "functional_impact": (
+                            "HIGH" if (is_ace2 or in_epitope) else "MODERATE"
+                        ),
+                    }
+                )
         return sorted(hotspots, key=lambda x: x["frequency"], reverse=True)
 
     def _find_convergent_mutations(self) -> list[dict]:
@@ -109,12 +134,14 @@ class MutationAnalyzer:
         convergent = []
         for mut, lineages in mutation_lineages.items():
             if len(lineages) >= 3:  # Present in 3+ lineages = convergent
-                convergent.append({
-                    "mutation": mut,
-                    "lineage_count": len(lineages),
-                    "lineages": sorted(lineages),
-                    "total_frequency": self.mutation_counts.get(mut, 0),
-                })
+                convergent.append(
+                    {
+                        "mutation": mut,
+                        "lineage_count": len(lineages),
+                        "lineages": sorted(lineages),
+                        "total_frequency": self.mutation_counts.get(mut, 0),
+                    }
+                )
         return sorted(convergent, key=lambda x: x["lineage_count"], reverse=True)
 
     def _get_functional_site_mutations(self, site_type: str = "ace2") -> list[dict]:
@@ -127,12 +154,14 @@ class MutationAnalyzer:
             except ValueError:
                 continue
             if pos in sites:
-                results.append({
-                    "mutation": mut_notation,
-                    "position": pos,
-                    "count": count,
-                    "impact": "HIGH — ACE2 contact residue",
-                })
+                results.append(
+                    {
+                        "mutation": mut_notation,
+                        "position": pos,
+                        "count": count,
+                        "impact": "HIGH — ACE2 contact residue",
+                    }
+                )
         return sorted(results, key=lambda x: x["count"], reverse=True)
 
     def _get_antibody_escape_mutations(self) -> dict[str, list[dict]]:
@@ -146,12 +175,16 @@ class MutationAnalyzer:
                 except ValueError:
                     continue
                 if pos in sites:
-                    mutations_in_class.append({
-                        "mutation": mut_notation,
-                        "position": pos,
-                        "count": count,
-                    })
-            result[ab_class] = sorted(mutations_in_class, key=lambda x: x["count"], reverse=True)
+                    mutations_in_class.append(
+                        {
+                            "mutation": mut_notation,
+                            "position": pos,
+                            "count": count,
+                        }
+                    )
+            result[ab_class] = sorted(
+                mutations_in_class, key=lambda x: x["count"], reverse=True
+            )
         return result
 
     def compute_mutation_frequency_matrix(self, sequences: list[ViralSequence]) -> dict:
@@ -169,8 +202,7 @@ class MutationAnalyzer:
         matrix = {}
         for pos, aa_counts in position_aa_counts.items():
             matrix[pos] = {
-                aa: round(count / total, 6)
-                for aa, count in aa_counts.most_common()
+                aa: round(count / total, 6) for aa, count in aa_counts.most_common()
             }
 
         return matrix

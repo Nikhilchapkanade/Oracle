@@ -5,12 +5,9 @@ Generative model for designing updated vaccine antigens targeting predicted futu
 
 import logging
 import random
-import hashlib
-from typing import Optional
 
-import numpy as np
 
-from src.core.models import VaccineCandidate, MutationPrediction, EscapeScore
+from src.core.models import EscapeScore, MutationPrediction, VaccineCandidate
 
 logger = logging.getLogger(__name__)
 
@@ -29,15 +26,15 @@ class VaccineDesigner:
 
     # Immunogenicity-boosting positions and amino acids
     IMMUNOGENIC_SUBSTITUTIONS = {
-        417: ["N", "T"],   # Enhances class 1 epitope presentation
-        484: ["K", "A"],   # Modulates class 2 epitope
-        501: ["Y"],        # Enhanced ACE2 binding for vaccine antigen uptake
-        614: ["G"],        # Stabilizes prefusion conformation
+        417: ["N", "T"],  # Enhances class 1 epitope presentation
+        484: ["K", "A"],  # Modulates class 2 epitope
+        501: ["Y"],  # Enhanced ACE2 binding for vaccine antigen uptake
+        614: ["G"],  # Stabilizes prefusion conformation
     }
 
     # Stabilizing mutations (proline substitutions, disulfide bonds)
     STABILIZING_MUTATIONS = {
-        986: "P",   # 2P stabilization (standard in mRNA vaccines)
+        986: "P",  # 2P stabilization (standard in mRNA vaccines)
         987: "P",
     }
 
@@ -63,11 +60,15 @@ class VaccineDesigner:
         candidates = []
 
         # Strategy 1: Consensus-based vaccine
-        consensus = self._design_consensus_candidate(reference_sequence, predictions, escape_scores)
+        consensus = self._design_consensus_candidate(
+            reference_sequence, predictions, escape_scores
+        )
         candidates.append(consensus)
 
         # Strategy 2: Mosaic antigen
-        mosaic = self._design_mosaic_candidate(reference_sequence, predictions, escape_scores)
+        mosaic = self._design_mosaic_candidate(
+            reference_sequence, predictions, escape_scores
+        )
         candidates.append(mosaic)
 
         # Strategy 3: Proactive vaccine (targeting predicted future mutations)
@@ -95,7 +96,9 @@ class VaccineDesigner:
         return candidates[:num_candidates]
 
     def _design_consensus_candidate(
-        self, reference: str, predictions: list[MutationPrediction],
+        self,
+        reference: str,
+        predictions: list[MutationPrediction],
         escape_scores: list[EscapeScore],
     ) -> VaccineCandidate:
         """Design a consensus sequence incorporating the most common predicted mutations."""
@@ -132,7 +135,9 @@ class VaccineDesigner:
         )
 
     def _design_mosaic_candidate(
-        self, reference: str, predictions: list[MutationPrediction],
+        self,
+        reference: str,
+        predictions: list[MutationPrediction],
         escape_scores: list[EscapeScore],
     ) -> VaccineCandidate:
         """Design a mosaic antigen combining epitopes from multiple variants."""
@@ -143,7 +148,6 @@ class VaccineDesigner:
         target_mutations = []
 
         # Combine mutations from different escape profiles to cover all antibody classes
-        class_mutations = {"class1": [], "class2": [], "class3": [], "class4": []}
 
         for pred in predictions:
             if pred.escape_impact > 0.3 and pred.position <= len(seq):
@@ -178,7 +182,9 @@ class VaccineDesigner:
         )
 
     def _design_proactive_candidate(
-        self, reference: str, predictions: list[MutationPrediction],
+        self,
+        reference: str,
+        predictions: list[MutationPrediction],
     ) -> VaccineCandidate:
         """Design a proactive vaccine targeting mutations predicted to emerge."""
         self._design_counter += 1
@@ -188,7 +194,9 @@ class VaccineDesigner:
         target_mutations = []
 
         # Focus on high-probability, high-escape-impact future mutations
-        future_muts = [p for p in predictions if p.probability > 0.15 and p.escape_impact > 0.2]
+        future_muts = [
+            p for p in predictions if p.probability > 0.15 and p.escape_impact > 0.2
+        ]
         future_muts.sort(key=lambda p: p.probability * p.escape_impact, reverse=True)
 
         for pred in future_muts[:15]:
@@ -215,7 +223,9 @@ class VaccineDesigner:
         )
 
     def _design_broadly_neutralizing(
-        self, reference: str, escape_scores: list[EscapeScore],
+        self,
+        reference: str,
+        escape_scores: list[EscapeScore],
     ) -> VaccineCandidate:
         """Design antigen optimized for broadly neutralizing antibody response."""
         self._design_counter += 1
@@ -259,8 +269,11 @@ class VaccineDesigner:
         )
 
     def _design_optimized_variant(
-        self, reference: str, predictions: list[MutationPrediction],
-        escape_scores: list[EscapeScore], seed: int = 0,
+        self,
+        reference: str,
+        predictions: list[MutationPrediction],
+        escape_scores: list[EscapeScore],
+        seed: int = 0,
     ) -> VaccineCandidate:
         """Stochastic optimization to explore vaccine design space."""
         self._design_counter += 1
@@ -293,8 +306,14 @@ class VaccineDesigner:
                 seq[pos - 1] = aa
 
         candidate_seq = "".join(seq)
-        method = rng.choice(["genetic_algorithm", "simulated_annealing",
-                              "bayesian_optimization", "random_walk"])
+        method = rng.choice(
+            [
+                "genetic_algorithm",
+                "simulated_annealing",
+                "bayesian_optimization",
+                "random_walk",
+            ]
+        )
 
         return VaccineCandidate(
             id=f"ORACLE-VAX-OPT-{self._design_counter:03d}",

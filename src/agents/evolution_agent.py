@@ -4,6 +4,7 @@ Predicts future mutations using the evolutionary trajectory forecaster.
 """
 
 import logging
+
 from src.agents.base_agent import BaseAgent
 from src.ml.evolution_forecaster import EvolutionForecaster
 
@@ -22,7 +23,7 @@ class EvolutionAgent(BaseAgent):
     def __init__(self):
         super().__init__(
             name="EvolutionAgent",
-            description="Predicts future viral mutations using evolutionary modeling"
+            description="Predicts future viral mutations using evolutionary modeling",
         )
         self.forecaster = EvolutionForecaster()
 
@@ -56,7 +57,9 @@ class EvolutionAgent(BaseAgent):
         # Forecast evolutionary trajectory
         current_mutations = input_data.get("top_mutations", [])
         if current_mutations:
-            current_mut_names = [m[0] if isinstance(m, tuple) else m for m in current_mutations[:10]]
+            current_mut_names = [
+                m[0] if isinstance(m, tuple) else m for m in current_mutations[:10]
+            ]
         else:
             current_mut_names = []
 
@@ -69,28 +72,35 @@ class EvolutionAgent(BaseAgent):
         prob_matrix = self.forecaster.get_mutation_probability_matrix()
 
         # Identify high-risk predictions
-        high_risk = [p for p in predictions if p.escape_impact > 0.3 and p.probability > 0.15]
+        high_risk = [
+            p for p in predictions if p.escape_impact > 0.3 and p.probability > 0.15
+        ]
 
         # Build prediction summary
         prediction_summary = []
         for p in predictions[:15]:
-            prediction_summary.append({
-                "mutation": p.notation,
-                "probability": p.probability,
-                "fitness_impact": p.fitness_impact,
-                "escape_impact": p.escape_impact,
-                "timeframe_days": p.expected_timeframe_days,
-                "confidence": p.confidence_interval,
-            })
+            prediction_summary.append(
+                {
+                    "mutation": p.notation,
+                    "probability": p.probability,
+                    "fitness_impact": p.fitness_impact,
+                    "escape_impact": p.escape_impact,
+                    "timeframe_days": p.expected_timeframe_days,
+                    "confidence": p.confidence_interval,
+                }
+            )
 
         result = {
             "predictions": predictions,
             "prediction_summary": prediction_summary,
-            "high_risk_predictions": [{
-                "mutation": p.notation,
-                "probability": p.probability,
-                "escape_impact": p.escape_impact,
-            } for p in high_risk],
+            "high_risk_predictions": [
+                {
+                    "mutation": p.notation,
+                    "probability": p.probability,
+                    "escape_impact": p.escape_impact,
+                }
+                for p in high_risk
+            ],
             "evolutionary_trajectory": trajectory,
             "probability_matrix": prob_matrix,
             "training_metrics": training_metrics,

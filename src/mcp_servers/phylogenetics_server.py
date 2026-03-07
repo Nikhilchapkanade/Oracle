@@ -115,7 +115,9 @@ class PhylogeneticsMCPServer:
 
         try:
             result = handler(**arguments)
-            return {"content": [{"type": "text", "text": json.dumps(result, default=str)}]}
+            return {
+                "content": [{"type": "text", "text": json.dumps(result, default=str)}]
+            }
         except Exception as e:
             return {"error": str(e)}
 
@@ -171,12 +173,14 @@ class PhylogeneticsMCPServer:
             # Simulate breakpoint detection
             for _ in range(rng.randint(0, 3)):
                 bp = rng.randint(300, 1200)
-                breakpoints.append({
-                    "position": bp,
-                    "confidence": round(rng.uniform(0.3, 0.95), 4),
-                    "donor_left": lineage1 if rng.random() > 0.5 else lineage2,
-                    "donor_right": lineage2 if rng.random() > 0.5 else lineage1,
-                })
+                breakpoints.append(
+                    {
+                        "position": bp,
+                        "confidence": round(rng.uniform(0.3, 0.95), 4),
+                        "donor_left": lineage1 if rng.random() > 0.5 else lineage2,
+                        "donor_right": lineage2 if rng.random() > 0.5 else lineage1,
+                    }
+                )
 
         return {
             "lineage1": lineage1,
@@ -185,7 +189,9 @@ class PhylogeneticsMCPServer:
             "recombination_detected": len(breakpoints) > 0,
             "breakpoints": breakpoints,
             "recombination_score": round(rng.uniform(0.1, 0.9), 4),
-            "known_recombinants": ["XBB", "XBB.1.5"] if "XBB" in lineage1 or "XBB" in lineage2 else [],
+            "known_recombinants": (
+                ["XBB", "XBB.1.5"] if "XBB" in lineage1 or "XBB" in lineage2 else []
+            ),
         }
 
     def _get_newick(self) -> dict:

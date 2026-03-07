@@ -5,13 +5,14 @@ Exposes tools for sequence retrieval, lineage analysis, mutation statistics, and
 
 import json
 import logging
-from datetime import datetime
-from typing import Any
 
 from src.core.database import OracleDatabase
 from src.core.models import ViralSequence
-from src.ingestion.sequence_ingestion import SequenceIngestionPipeline, LINEAGE_DEFINITIONS
 from src.ingestion.mutation_analyzer import MutationAnalyzer
+from src.ingestion.sequence_ingestion import (
+    LINEAGE_DEFINITIONS,
+    SequenceIngestionPipeline,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -61,9 +62,19 @@ class GenomicMCPServer:
                 "inputSchema": {
                     "type": "object",
                     "properties": {
-                        "lineage": {"type": "string", "description": "Filter by lineage (e.g., 'BA.5')"},
-                        "country": {"type": "string", "description": "Filter by country"},
-                        "limit": {"type": "integer", "description": "Max results", "default": 50},
+                        "lineage": {
+                            "type": "string",
+                            "description": "Filter by lineage (e.g., 'BA.5')",
+                        },
+                        "country": {
+                            "type": "string",
+                            "description": "Filter by country",
+                        },
+                        "limit": {
+                            "type": "integer",
+                            "description": "Max results",
+                            "default": 50,
+                        },
                     },
                 },
             },
@@ -73,7 +84,10 @@ class GenomicMCPServer:
                 "inputSchema": {
                     "type": "object",
                     "properties": {
-                        "lineage": {"type": "string", "description": "Lineage name (e.g., 'B.1.1.529')"},
+                        "lineage": {
+                            "type": "string",
+                            "description": "Lineage name (e.g., 'B.1.1.529')",
+                        },
                     },
                     "required": ["lineage"],
                 },
@@ -84,7 +98,11 @@ class GenomicMCPServer:
                 "inputSchema": {
                     "type": "object",
                     "properties": {
-                        "top_n": {"type": "integer", "description": "Number of top mutations", "default": 20},
+                        "top_n": {
+                            "type": "integer",
+                            "description": "Number of top mutations",
+                            "default": 20,
+                        },
                     },
                 },
             },
@@ -109,7 +127,11 @@ class GenomicMCPServer:
                 "inputSchema": {
                     "type": "object",
                     "properties": {
-                        "count": {"type": "integer", "description": "Number of sequences to generate", "default": 100},
+                        "count": {
+                            "type": "integer",
+                            "description": "Number of sequences to generate",
+                            "default": 100,
+                        },
                     },
                 },
             },
@@ -131,12 +153,16 @@ class GenomicMCPServer:
 
         try:
             result = handler(**arguments)
-            return {"content": [{"type": "text", "text": json.dumps(result, default=str)}]}
+            return {
+                "content": [{"type": "text", "text": json.dumps(result, default=str)}]
+            }
         except Exception as e:
             logger.error(f"Tool {tool_name} failed: {e}")
             return {"error": str(e)}
 
-    def _search_sequences(self, lineage: str = None, country: str = None, limit: int = 50) -> dict:
+    def _search_sequences(
+        self, lineage: str = None, country: str = None, limit: int = 50
+    ) -> dict:
         """Search sequences with filters."""
         sequences = self.db.get_sequences(lineage=lineage, limit=limit)
 
@@ -156,7 +182,11 @@ class GenomicMCPServer:
             return {
                 "lineage": lineage,
                 "who_label": defn.get("who_label", "N/A"),
-                "risk_level": defn.get("risk_level", "Not classified").value if hasattr(defn.get("risk_level"), 'value') else str(defn.get("risk_level", "N/A")),
+                "risk_level": (
+                    defn.get("risk_level", "Not classified").value
+                    if hasattr(defn.get("risk_level"), "value")
+                    else str(defn.get("risk_level", "N/A"))
+                ),
                 "defining_mutations": defn.get("mutations", []),
                 "first_detected_country": defn.get("country", "Unknown"),
                 "relative_fitness": defn.get("fitness", 1.0),
@@ -166,9 +196,9 @@ class GenomicMCPServer:
 
         # From database
         lineages = self.db.get_lineages()
-        for l in lineages:
-            if l.get("name") == lineage:
-                return l
+        for lin in lineages:
+            if lin.get("name") == lineage:
+                return lin
 
         return {"error": f"Lineage {lineage} not found"}
 
@@ -206,7 +236,9 @@ class GenomicMCPServer:
                 all_mutations.update(mutations)
 
         # Find shared and unique mutations
-        shared = set.intersection(*[set(comparison[l]["mutations"]) for l in comparison])
+        shared = set.intersection(
+            *[set(comparison[lin]["mutations"]) for lin in comparison]
+        )
         unique_per_lineage = {}
         for lineage in comparison:
             others = set()
@@ -239,7 +271,6 @@ class GenomicMCPServer:
 
 def main():
     """Run the Genomic MCP Server."""
-    import sys
 
     server = GenomicMCPServer()
     print(json.dumps(server.get_server_info(), indent=2))
@@ -254,7 +285,9 @@ def main():
     print(json.dumps(json.loads(stats["content"][0]["text"]), indent=2))
 
     print("\n--- Variant Comparison ---")
-    comp = server.call_tool("compare_variants", {"lineages": ["B.1.617.2", "B.1.1.529", "XBB.1.5"]})
+    comp = server.call_tool(
+        "compare_variants", {"lineages": ["B.1.617.2", "B.1.1.529", "XBB.1.5"]}
+    )
     print(json.dumps(json.loads(comp["content"][0]["text"]), indent=2))
 
 

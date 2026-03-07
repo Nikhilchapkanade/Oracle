@@ -4,10 +4,11 @@ Monitors incoming sequences for novel mutations, emerging lineages, and anomalie
 """
 
 import logging
+
 from src.agents.base_agent import BaseAgent
-from src.ingestion.sequence_ingestion import SequenceIngestionPipeline
-from src.ingestion.mutation_analyzer import MutationAnalyzer
 from src.core.models import ViralSequence
+from src.ingestion.mutation_analyzer import MutationAnalyzer
+from src.ingestion.sequence_ingestion import SequenceIngestionPipeline
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +25,7 @@ class SurveillanceAgent(BaseAgent):
     def __init__(self):
         super().__init__(
             name="SurveillanceAgent",
-            description="Monitors incoming sequences for novel mutations and emerging lineages"
+            description="Monitors incoming sequences for novel mutations and emerging lineages",
         )
         self.ingestion = SequenceIngestionPipeline()
         self.analyzer = MutationAnalyzer()
@@ -82,7 +83,9 @@ class SurveillanceAgent(BaseAgent):
 
         return result
 
-    def _generate_alerts(self, analysis: dict, sequences: list[ViralSequence]) -> list[dict]:
+    def _generate_alerts(
+        self, analysis: dict, sequences: list[ViralSequence]
+    ) -> list[dict]:
         """Generate surveillance alerts based on analysis findings."""
         alerts = []
 
@@ -90,35 +93,44 @@ class SurveillanceAgent(BaseAgent):
         convergent = analysis.get("convergent_mutations", [])
         if convergent:
             top_convergent = convergent[0]
-            alerts.append({
-                "level": "WARNING",
-                "type": "CONVERGENT_EVOLUTION",
-                "message": f"Convergent mutation {top_convergent['mutation']} detected in "
-                           f"{top_convergent['lineage_count']} lineages: {', '.join(top_convergent['lineages'][:5])}",
-                "details": top_convergent,
-            })
+            alerts.append(
+                {
+                    "level": "WARNING",
+                    "type": "CONVERGENT_EVOLUTION",
+                    "message": f"Convergent mutation {top_convergent['mutation']} detected in "
+                    f"{top_convergent['lineage_count']} lineages: {', '.join(top_convergent['lineages'][:5])}",
+                    "details": top_convergent,
+                }
+            )
 
         # Alert: ACE2 contact mutations
         ace2_muts = analysis.get("ace2_contact_mutations", [])
         if len(ace2_muts) > 3:
-            alerts.append({
-                "level": "HIGH",
-                "type": "ACE2_CONTACT_MUTATIONS",
-                "message": f"{len(ace2_muts)} mutations detected at ACE2 contact residues — "
-                           f"potential binding affinity changes",
-                "details": {"mutations": [m["mutation"] for m in ace2_muts[:5]]},
-            })
+            alerts.append(
+                {
+                    "level": "HIGH",
+                    "type": "ACE2_CONTACT_MUTATIONS",
+                    "message": f"{len(ace2_muts)} mutations detected at ACE2 contact residues — "
+                    f"potential binding affinity changes",
+                    "details": {"mutations": [m["mutation"] for m in ace2_muts[:5]]},
+                }
+            )
 
         # Alert: Mutation hotspot in RBD
-        hotspots = [h for h in analysis.get("mutation_hotspots", [])
-                    if h.get("region") == "Receptor binding domain"]
+        hotspots = [
+            h
+            for h in analysis.get("mutation_hotspots", [])
+            if h.get("region") == "Receptor binding domain"
+        ]
         if hotspots:
-            alerts.append({
-                "level": "HIGH",
-                "type": "RBD_HOTSPOT",
-                "message": f"{len(hotspots)} mutation hotspots detected in RBD region",
-                "details": {"hotspots": hotspots[:5]},
-            })
+            alerts.append(
+                {
+                    "level": "HIGH",
+                    "type": "RBD_HOTSPOT",
+                    "message": f"{len(hotspots)} mutation hotspots detected in RBD region",
+                    "details": {"hotspots": hotspots[:5]},
+                }
+            )
 
         # Alert: Rapid lineage growth
         lineage_counts = {}
@@ -127,21 +139,25 @@ class SurveillanceAgent(BaseAgent):
 
         dominant = max(lineage_counts, key=lineage_counts.get, default=None)
         if dominant and lineage_counts[dominant] / len(sequences) > 0.3:
-            alerts.append({
-                "level": "INFO",
-                "type": "DOMINANT_LINEAGE",
-                "message": f"Lineage {dominant} is dominant at "
-                           f"{lineage_counts[dominant] / len(sequences) * 100:.1f}% prevalence",
-                "details": {"lineage": dominant, "count": lineage_counts[dominant]},
-            })
+            alerts.append(
+                {
+                    "level": "INFO",
+                    "type": "DOMINANT_LINEAGE",
+                    "message": f"Lineage {dominant} is dominant at "
+                    f"{lineage_counts[dominant] / len(sequences) * 100:.1f}% prevalence",
+                    "details": {"lineage": dominant, "count": lineage_counts[dominant]},
+                }
+            )
 
         # Alert: High mutation diversity
         if analysis["unique_mutations"] > 50:
-            alerts.append({
-                "level": "WARNING",
-                "type": "HIGH_DIVERSITY",
-                "message": f"High mutation diversity: {analysis['unique_mutations']} unique mutations observed",
-                "details": {"unique_mutations": analysis["unique_mutations"]},
-            })
+            alerts.append(
+                {
+                    "level": "WARNING",
+                    "type": "HIGH_DIVERSITY",
+                    "message": f"High mutation diversity: {analysis['unique_mutations']} unique mutations observed",
+                    "details": {"unique_mutations": analysis["unique_mutations"]},
+                }
+            )
 
         return alerts

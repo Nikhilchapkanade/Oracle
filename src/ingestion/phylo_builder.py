@@ -5,7 +5,6 @@ Constructs phylogenetic trees using neighbor-joining and tracks lineage relation
 
 import logging
 import random
-import math
 from collections import defaultdict
 from typing import Optional
 
@@ -49,7 +48,9 @@ class PhylogeneticTreeBuilder:
                 name=lineage,
                 lineage=lineage,
                 branch_length=random.uniform(0.001, 0.05),
-                mutations_from_parent=[m.notation for m in representative.mutations[:5]],
+                mutations_from_parent=[
+                    m.notation for m in representative.mutations[:5]
+                ],
             )
             self.nodes[node_id] = node
             leaf_ids.append(node_id)
@@ -66,18 +67,20 @@ class PhylogeneticTreeBuilder:
 
         node_list = []
         for nid, node in self.nodes.items():
-            node_list.append({
-                "id": node.id,
-                "name": node.name,
-                "lineage": node.lineage,
-                "branch_length": node.branch_length,
-                "parent_id": node.parent_id,
-                "children_ids": node.children_ids,
-                "is_leaf": node.is_leaf,
-                "depth": node.depth,
-                "bootstrap_support": node.bootstrap_support,
-                "mutations_from_parent": node.mutations_from_parent,
-            })
+            node_list.append(
+                {
+                    "id": node.id,
+                    "name": node.name,
+                    "lineage": node.lineage,
+                    "branch_length": node.branch_length,
+                    "parent_id": node.parent_id,
+                    "children_ids": node.children_ids,
+                    "is_leaf": node.is_leaf,
+                    "depth": node.depth,
+                    "bootstrap_support": node.bootstrap_support,
+                    "mutations_from_parent": node.mutations_from_parent,
+                }
+            )
 
         return {
             "nodes": node_list,
@@ -130,7 +133,7 @@ class PhylogeneticTreeBuilder:
 
         while len(active_nodes) > 2:
             # Find the closest pair
-            min_dist = float('inf')
+            min_dist = float("inf")
             pair = (0, 1)
 
             for i in range(len(active_nodes)):
@@ -139,7 +142,9 @@ class PhylogeneticTreeBuilder:
                     n2 = self.nodes[active_nodes[j]]
                     key = (n1.lineage or n1.name, n2.lineage or n2.name)
                     rev_key = (key[1], key[0])
-                    d = distances.get(key, distances.get(rev_key, random.uniform(0.1, 0.5)))
+                    d = distances.get(
+                        key, distances.get(rev_key, random.uniform(0.1, 0.5))
+                    )
 
                     if d < min_dist:
                         min_dist = d
@@ -162,13 +167,20 @@ class PhylogeneticTreeBuilder:
 
             # Update children
             self.nodes[child1_id].parent_id = internal_id
-            self.nodes[child1_id].branch_length = min_dist / 2 + random.uniform(0.001, 0.01)
+            self.nodes[child1_id].branch_length = min_dist / 2 + random.uniform(
+                0.001, 0.01
+            )
             self.nodes[child2_id].parent_id = internal_id
-            self.nodes[child2_id].branch_length = min_dist / 2 + random.uniform(0.001, 0.01)
+            self.nodes[child2_id].branch_length = min_dist / 2 + random.uniform(
+                0.001, 0.01
+            )
 
             # Replace the pair with the new internal node
-            new_active = [n for idx, n in enumerate(active_nodes)
-                          if idx != pair[0] and idx != pair[1]]
+            new_active = [
+                n
+                for idx, n in enumerate(active_nodes)
+                if idx != pair[0] and idx != pair[1]
+            ]
             new_active.append(internal_id)
             active_nodes = new_active
 
@@ -243,12 +255,14 @@ class PhylogeneticTreeBuilder:
         path = []
         current = target_node
         while current:
-            path.append({
-                "id": current.id,
-                "name": current.name,
-                "depth": current.depth,
-                "branch_length": current.branch_length,
-            })
+            path.append(
+                {
+                    "id": current.id,
+                    "name": current.name,
+                    "depth": current.depth,
+                    "branch_length": current.branch_length,
+                }
+            )
             if current.parent_id and current.parent_id in self.nodes:
                 current = self.nodes[current.parent_id]
             else:

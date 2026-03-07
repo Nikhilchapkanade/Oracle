@@ -29,7 +29,15 @@ class EpidemiologyMCPServer:
     REGIONS = ["North America", "Europe", "Asia", "South America", "Africa", "Oceania"]
     COUNTRIES = {
         "North America": ["United States", "Canada", "Mexico"],
-        "Europe": ["United Kingdom", "Germany", "France", "Italy", "Spain", "Netherlands", "Denmark"],
+        "Europe": [
+            "United Kingdom",
+            "Germany",
+            "France",
+            "Italy",
+            "Spain",
+            "Netherlands",
+            "Denmark",
+        ],
         "Asia": ["India", "Japan", "South Korea", "China", "Thailand", "Indonesia"],
         "South America": ["Brazil", "Argentina"],
         "Africa": ["South Africa", "Nigeria", "Kenya"],
@@ -57,7 +65,10 @@ class EpidemiologyMCPServer:
                 "inputSchema": {
                     "type": "object",
                     "properties": {
-                        "region": {"type": "string", "description": "Region name or 'global'"},
+                        "region": {
+                            "type": "string",
+                            "description": "Region name or 'global'",
+                        },
                     },
                 },
             },
@@ -88,7 +99,10 @@ class EpidemiologyMCPServer:
                 "inputSchema": {
                     "type": "object",
                     "properties": {
-                        "variant": {"type": "string", "description": "Variant lineage name"},
+                        "variant": {
+                            "type": "string",
+                            "description": "Variant lineage name",
+                        },
                         "region": {"type": "string", "default": "global"},
                         "days": {"type": "integer", "default": 90},
                     },
@@ -122,7 +136,9 @@ class EpidemiologyMCPServer:
 
         try:
             result = handler(**arguments)
-            return {"content": [{"type": "text", "text": json.dumps(result, default=str)}]}
+            return {
+                "content": [{"type": "text", "text": json.dumps(result, default=str)}]
+            }
         except Exception as e:
             return {"error": str(e)}
 
@@ -138,7 +154,9 @@ class EpidemiologyMCPServer:
                 "report_date": datetime.now().isoformat(),
                 "global_status": "ELEVATED",
                 "regions": regions_data,
-                "global_weekly_cases": sum(r["weekly_cases"] for r in regions_data.values()),
+                "global_weekly_cases": sum(
+                    r["weekly_cases"] for r in regions_data.values()
+                ),
                 "dominant_variant": "JN.1",
                 "emerging_variants": ["JN.1.1", "KP.2", "KP.3"],
             }
@@ -168,17 +186,21 @@ class EpidemiologyMCPServer:
         today = datetime.now()
         for i in range(days):
             date = today - timedelta(days=days - i)
-            daily_cases = max(0, int(base_cases * (1 + 0.02 * i) + rng.gauss(0, base_cases * 0.1)))
+            daily_cases = max(
+                0, int(base_cases * (1 + 0.02 * i) + rng.gauss(0, base_cases * 0.1))
+            )
             daily_deaths = max(0, int(daily_cases * rng.uniform(0.005, 0.02)))
 
-            time_series.append({
-                "date": date.strftime("%Y-%m-%d"),
-                "cases": daily_cases,
-                "deaths": daily_deaths,
-                "hospitalizations": int(daily_cases * rng.uniform(0.01, 0.05)),
-                "tests": int(daily_cases * rng.uniform(3, 10)),
-                "positivity_rate": round(rng.uniform(3.0, 20.0), 2),
-            })
+            time_series.append(
+                {
+                    "date": date.strftime("%Y-%m-%d"),
+                    "cases": daily_cases,
+                    "deaths": daily_deaths,
+                    "hospitalizations": int(daily_cases * rng.uniform(0.01, 0.05)),
+                    "tests": int(daily_cases * rng.uniform(3, 10)),
+                    "positivity_rate": round(rng.uniform(3.0, 20.0), 2),
+                }
+            )
 
         return {
             "country": country,
@@ -186,13 +208,17 @@ class EpidemiologyMCPServer:
             "total_cases": sum(d["cases"] for d in time_series),
             "total_deaths": sum(d["deaths"] for d in time_series),
             "avg_daily_cases": round(sum(d["cases"] for d in time_series) / days),
-            "trend": "INCREASING" if time_series[-1]["cases"] > time_series[0]["cases"] else "DECREASING",
+            "trend": (
+                "INCREASING"
+                if time_series[-1]["cases"] > time_series[0]["cases"]
+                else "DECREASING"
+            ),
             "time_series": time_series,
         }
 
     def _get_vaccination_rates(self, region: str = "global") -> dict:
         """Get vaccination coverage data."""
-        rng = random.Random(hash(region))
+        random.Random(hash(region))
 
         countries_data = []
         all_countries = []
@@ -202,25 +228,37 @@ class EpidemiologyMCPServer:
 
         for country in all_countries:
             crng = random.Random(hash(country))
-            countries_data.append({
-                "country": country,
-                "primary_series": round(crng.uniform(40, 95), 1),
-                "first_booster": round(crng.uniform(20, 80), 1),
-                "second_booster": round(crng.uniform(5, 50), 1),
-                "bivalent_booster": round(crng.uniform(2, 35), 1),
-                "updated_2024": round(crng.uniform(1, 25), 1),
-                "total_doses_administered": crng.randint(10_000_000, 500_000_000),
-            })
+            countries_data.append(
+                {
+                    "country": country,
+                    "primary_series": round(crng.uniform(40, 95), 1),
+                    "first_booster": round(crng.uniform(20, 80), 1),
+                    "second_booster": round(crng.uniform(5, 50), 1),
+                    "bivalent_booster": round(crng.uniform(2, 35), 1),
+                    "updated_2024": round(crng.uniform(1, 25), 1),
+                    "total_doses_administered": crng.randint(10_000_000, 500_000_000),
+                }
+            )
 
         return {
             "region": region,
             "report_date": datetime.now().strftime("%Y-%m-%d"),
             "countries": countries_data,
-            "global_avg_primary": round(sum(c["primary_series"] for c in countries_data) / max(len(countries_data), 1), 1),
-            "global_avg_booster": round(sum(c["first_booster"] for c in countries_data) / max(len(countries_data), 1), 1),
+            "global_avg_primary": round(
+                sum(c["primary_series"] for c in countries_data)
+                / max(len(countries_data), 1),
+                1,
+            ),
+            "global_avg_booster": round(
+                sum(c["first_booster"] for c in countries_data)
+                / max(len(countries_data), 1),
+                1,
+            ),
         }
 
-    def _forecast_spread(self, variant: str, region: str = "global", days: int = 90) -> dict:
+    def _forecast_spread(
+        self, variant: str, region: str = "global", days: int = 90
+    ) -> dict:
         """SIR model-based spread forecast."""
         rng = random.Random(hash(f"{variant}_{region}"))
 
@@ -232,32 +270,36 @@ class EpidemiologyMCPServer:
         beta = r0 * gamma
 
         # Simplified SIR simulation
-        S = population - initial_infected
-        I = initial_infected
-        R = 0
+        susceptible = population - initial_infected
+        infected = initial_infected
+        recovered = 0
         dt = 1.0
 
         forecast = []
         for day in range(days):
-            new_infections = beta * S * I / population * dt
-            new_recoveries = gamma * I * dt
+            new_infections = beta * susceptible * infected / population * dt
+            new_recoveries = gamma * infected * dt
 
-            S -= new_infections
-            I += new_infections - new_recoveries
-            R += new_recoveries
+            susceptible -= new_infections
+            infected += new_infections - new_recoveries
+            recovered += new_recoveries
 
-            S = max(0, S)
-            I = max(0, I)
+            susceptible = max(0, susceptible)
+            infected = max(0, infected)
 
             if day % 7 == 0:  # Weekly data points
-                forecast.append({
-                    "week": day // 7 + 1,
-                    "date": (datetime.now() + timedelta(days=day)).strftime("%Y-%m-%d"),
-                    "estimated_cases": int(I),
-                    "cumulative_cases": int(R),
-                    "prevalence_pct": round(I / population * 100, 4),
-                    "susceptible_pct": round(S / population * 100, 2),
-                })
+                forecast.append(
+                    {
+                        "week": day // 7 + 1,
+                        "date": (datetime.now() + timedelta(days=day)).strftime(
+                            "%Y-%m-%d"
+                        ),
+                        "estimated_cases": int(infected),
+                        "cumulative_cases": int(recovered),
+                        "prevalence_pct": round(infected / population * 100, 4),
+                        "susceptible_pct": round(susceptible / population * 100, 2),
+                    }
+                )
 
         peak_week = max(forecast, key=lambda x: x["estimated_cases"])
 
@@ -312,17 +354,21 @@ class EpidemiologyMCPServer:
 
             proportions["Other"] = round(max(0, remaining), 1)
 
-            prevalence_data.append({
-                "week": week_date.strftime("%Y-%m-%d"),
-                "week_number": w + 1,
-                "proportions": proportions,
-            })
+            prevalence_data.append(
+                {
+                    "week": week_date.strftime("%Y-%m-%d"),
+                    "week_number": w + 1,
+                    "proportions": proportions,
+                }
+            )
 
         return {
             "period_weeks": weeks,
             "variants_tracked": variants,
-            "current_dominant": max(prevalence_data[-1]["proportions"],
-                                     key=prevalence_data[-1]["proportions"].get),
+            "current_dominant": max(
+                prevalence_data[-1]["proportions"],
+                key=prevalence_data[-1]["proportions"].get,
+            ),
             "fastest_growing": "JN.1",
             "prevalence_data": prevalence_data,
         }

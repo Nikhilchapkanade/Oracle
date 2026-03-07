@@ -5,11 +5,10 @@ SQLAlchemy-based persistence for sequences, mutations, and analysis results.
 
 import json
 import logging
+import sqlite3
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
-
-import sqlite3
 
 logger = logging.getLogger(__name__)
 
@@ -20,6 +19,7 @@ class OracleDatabase:
     def __init__(self, db_path: Optional[str] = None):
         if db_path is None:
             from config.settings import config
+
             db_path = str(config.db.url).replace("sqlite:///", "")
 
         self.db_path = db_path
@@ -151,10 +151,19 @@ class OracleDatabase:
                (id, sequence, lineage, collection_date, country, continent, host, clade,
                 quality_score, mutations_json, metadata_json)
                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-            (seq.id, seq.sequence, seq.lineage, seq.collection_date.isoformat(),
-             seq.country, seq.continent, seq.host, seq.clade, seq.quality_score,
-             json.dumps([m.notation for m in seq.mutations]),
-             json.dumps(seq.metadata))
+            (
+                seq.id,
+                seq.sequence,
+                seq.lineage,
+                seq.collection_date.isoformat(),
+                seq.country,
+                seq.continent,
+                seq.host,
+                seq.clade,
+                seq.quality_score,
+                json.dumps([m.notation for m in seq.mutations]),
+                json.dumps(seq.metadata),
+            ),
         )
         conn.commit()
         conn.close()
@@ -170,10 +179,19 @@ class OracleDatabase:
                        (id, sequence, lineage, collection_date, country, continent, host, clade,
                         quality_score, mutations_json, metadata_json)
                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-                    (seq.id, seq.sequence, seq.lineage, seq.collection_date.isoformat(),
-                     seq.country, seq.continent, seq.host, seq.clade, seq.quality_score,
-                     json.dumps([m.notation for m in seq.mutations]),
-                     json.dumps(seq.metadata))
+                    (
+                        seq.id,
+                        seq.sequence,
+                        seq.lineage,
+                        seq.collection_date.isoformat(),
+                        seq.country,
+                        seq.continent,
+                        seq.host,
+                        seq.clade,
+                        seq.quality_score,
+                        json.dumps([m.notation for m in seq.mutations]),
+                        json.dumps(seq.metadata),
+                    ),
                 )
                 count += 1
             except Exception as e:
@@ -182,18 +200,20 @@ class OracleDatabase:
         conn.close()
         return count
 
-    def get_sequences(self, lineage: Optional[str] = None, limit: int = 100) -> list[dict]:
+    def get_sequences(
+        self, lineage: Optional[str] = None, limit: int = 100
+    ) -> list[dict]:
         """Retrieve sequences, optionally filtered by lineage."""
         conn = self._get_conn()
         if lineage:
             rows = conn.execute(
                 "SELECT * FROM sequences WHERE lineage = ? ORDER BY collection_date DESC LIMIT ?",
-                (lineage, limit)
+                (lineage, limit),
             ).fetchall()
         else:
             rows = conn.execute(
                 "SELECT * FROM sequences ORDER BY collection_date DESC LIMIT ?",
-                (limit,)
+                (limit,),
             ).fetchall()
         conn.close()
         return [dict(r) for r in rows]
@@ -215,29 +235,41 @@ class OracleDatabase:
                 first_detected, first_detected_country, sequence_count, growth_rate,
                 relative_fitness, immune_escape_score, ace2_binding_score)
                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-            (lineage.name, lineage.parent_lineage, lineage.who_label,
-             lineage.risk_level.value, json.dumps(lineage.defining_mutations),
-             lineage.first_detected.isoformat() if lineage.first_detected else None,
-             lineage.first_detected_country, lineage.sequence_count,
-             lineage.growth_rate, lineage.relative_fitness,
-             lineage.immune_escape_score, lineage.ace2_binding_score)
+            (
+                lineage.name,
+                lineage.parent_lineage,
+                lineage.who_label,
+                lineage.risk_level.value,
+                json.dumps(lineage.defining_mutations),
+                lineage.first_detected.isoformat() if lineage.first_detected else None,
+                lineage.first_detected_country,
+                lineage.sequence_count,
+                lineage.growth_rate,
+                lineage.relative_fitness,
+                lineage.immune_escape_score,
+                lineage.ace2_binding_score,
+            ),
         )
         conn.commit()
         conn.close()
 
     def get_lineages(self) -> list[dict]:
         conn = self._get_conn()
-        rows = conn.execute("SELECT * FROM lineages ORDER BY sequence_count DESC").fetchall()
+        rows = conn.execute(
+            "SELECT * FROM lineages ORDER BY sequence_count DESC"
+        ).fetchall()
         conn.close()
         return [dict(r) for r in rows]
 
     # ─────────────── Pipeline Operations ───────────────
 
-    def log_pipeline_run(self, run_id: str, start_time: datetime, status: str = "running"):
+    def log_pipeline_run(
+        self, run_id: str, start_time: datetime, status: str = "running"
+    ):
         conn = self._get_conn()
         conn.execute(
             "INSERT OR REPLACE INTO pipeline_runs (id, start_time, status) VALUES (?, ?, ?)",
-            (run_id, start_time.isoformat(), status)
+            (run_id, start_time.isoformat(), status),
         )
         conn.commit()
         conn.close()
@@ -261,12 +293,18 @@ class OracleDatabase:
         conn.commit()
         conn.close()
 
-    def log_agent_activity(self, pipeline_id: str, agent_name: str,
-                            status: str, message: str = "", data: dict = None):
+    def log_agent_activity(
+        self,
+        pipeline_id: str,
+        agent_name: str,
+        status: str,
+        message: str = "",
+        data: dict = None,
+    ):
         conn = self._get_conn()
         conn.execute(
             "INSERT INTO agent_logs (pipeline_id, agent_name, status, message, data_json) VALUES (?, ?, ?, ?, ?)",
-            (pipeline_id, agent_name, status, message, json.dumps(data or {}))
+            (pipeline_id, agent_name, status, message, json.dumps(data or {})),
         )
         conn.commit()
         conn.close()
@@ -283,7 +321,7 @@ class OracleDatabase:
         conn = self._get_conn()
         rows = conn.execute(
             "SELECT * FROM agent_logs WHERE pipeline_id = ? ORDER BY timestamp",
-            (pipeline_id,)
+            (pipeline_id,),
         ).fetchall()
         conn.close()
         return [dict(r) for r in rows]
@@ -297,8 +335,15 @@ class OracleDatabase:
                (position, current_aa, predicted_aa, probability, expected_timeframe_days,
                 fitness_impact, escape_impact)
                VALUES (?, ?, ?, ?, ?, ?, ?)""",
-            (pred.position, pred.current_aa, pred.predicted_aa, pred.probability,
-             pred.expected_timeframe_days, pred.fitness_impact, pred.escape_impact)
+            (
+                pred.position,
+                pred.current_aa,
+                pred.predicted_aa,
+                pred.probability,
+                pred.expected_timeframe_days,
+                pred.fitness_impact,
+                pred.escape_impact,
+            ),
         )
         conn.commit()
         conn.close()
@@ -310,9 +355,18 @@ class OracleDatabase:
                (id, sequence, target_mutations_json, immunogenicity_score, breadth_score,
                 stability_score, escape_resistance, overall_score, design_rationale, generation_method)
                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-            (vc.id, vc.sequence, json.dumps(vc.target_mutations),
-             vc.immunogenicity_score, vc.breadth_score, vc.stability_score,
-             vc.escape_resistance, vc.overall_score, vc.design_rationale, vc.generation_method)
+            (
+                vc.id,
+                vc.sequence,
+                json.dumps(vc.target_mutations),
+                vc.immunogenicity_score,
+                vc.breadth_score,
+                vc.stability_score,
+                vc.escape_resistance,
+                vc.overall_score,
+                vc.design_rationale,
+                vc.generation_method,
+            ),
         )
         conn.commit()
         conn.close()
@@ -320,7 +374,8 @@ class OracleDatabase:
     def get_vaccine_candidates(self, limit: int = 10) -> list[dict]:
         conn = self._get_conn()
         rows = conn.execute(
-            "SELECT * FROM vaccine_candidates ORDER BY overall_score DESC LIMIT ?", (limit,)
+            "SELECT * FROM vaccine_candidates ORDER BY overall_score DESC LIMIT ?",
+            (limit,),
         ).fetchall()
         conn.close()
         return [dict(r) for r in rows]
@@ -328,7 +383,8 @@ class OracleDatabase:
     def get_predictions(self, limit: int = 50) -> list[dict]:
         conn = self._get_conn()
         rows = conn.execute(
-            "SELECT * FROM mutation_predictions ORDER BY probability DESC LIMIT ?", (limit,)
+            "SELECT * FROM mutation_predictions ORDER BY probability DESC LIMIT ?",
+            (limit,),
         ).fetchall()
         conn.close()
         return [dict(r) for r in rows]
@@ -348,9 +404,16 @@ class OracleDatabase:
                (variant_id, lineage, overall_escape, antibody_scores_json,
                 ace2_binding_change, convalescent_escape, vaccine_escape, risk_assessment)
                VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
-            (es.variant_id, es.lineage, es.overall_escape,
-             json.dumps(es.antibody_class_scores), es.ace2_binding_change,
-             es.convalescent_escape, es.vaccine_escape, es.risk_assessment)
+            (
+                es.variant_id,
+                es.lineage,
+                es.overall_escape,
+                json.dumps(es.antibody_class_scores),
+                es.ace2_binding_change,
+                es.convalescent_escape,
+                es.vaccine_escape,
+                es.risk_assessment,
+            ),
         )
         conn.commit()
         conn.close()

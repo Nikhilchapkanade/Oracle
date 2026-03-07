@@ -4,11 +4,10 @@ ESM-2 based protein embeddings and mutation effect prediction.
 Implements zero-shot fitness prediction using log-likelihood ratios.
 """
 
+import hashlib
 import logging
 import math
 import random
-import hashlib
-from typing import Optional
 
 import numpy as np
 
@@ -29,26 +28,26 @@ class ProteinLanguageModel:
 
     # Substitution probability matrix (simplified BLOSUM-inspired)
     SUBSTITUTION_PROBS = {
-        'A': {'V': 0.15, 'G': 0.12, 'S': 0.10, 'T': 0.08, 'L': 0.06},
-        'R': {'K': 0.18, 'Q': 0.10, 'H': 0.08, 'N': 0.06},
-        'N': {'D': 0.15, 'S': 0.12, 'K': 0.08, 'H': 0.06, 'Q': 0.05},
-        'D': {'E': 0.18, 'N': 0.15, 'Q': 0.06, 'S': 0.05},
-        'C': {'S': 0.08, 'A': 0.05},
-        'E': {'D': 0.18, 'Q': 0.12, 'K': 0.08, 'N': 0.05},
-        'Q': {'E': 0.12, 'K': 0.10, 'R': 0.08, 'N': 0.06, 'H': 0.05},
-        'G': {'A': 0.12, 'S': 0.08, 'N': 0.05},
-        'H': {'N': 0.10, 'Q': 0.08, 'Y': 0.06, 'R': 0.05},
-        'I': {'V': 0.18, 'L': 0.15, 'M': 0.10, 'F': 0.05},
-        'L': {'I': 0.15, 'V': 0.12, 'M': 0.10, 'F': 0.08},
-        'K': {'R': 0.18, 'Q': 0.10, 'N': 0.08, 'E': 0.06},
-        'M': {'L': 0.12, 'I': 0.10, 'V': 0.08},
-        'F': {'Y': 0.15, 'W': 0.10, 'L': 0.08, 'I': 0.05},
-        'P': {'A': 0.08, 'S': 0.06, 'T': 0.05},
-        'S': {'T': 0.15, 'A': 0.12, 'N': 0.10, 'G': 0.08},
-        'T': {'S': 0.15, 'A': 0.10, 'V': 0.06, 'N': 0.05},
-        'W': {'F': 0.10, 'Y': 0.08},
-        'Y': {'F': 0.15, 'H': 0.08, 'W': 0.06},
-        'V': {'I': 0.18, 'L': 0.15, 'A': 0.10, 'M': 0.06},
+        "A": {"V": 0.15, "G": 0.12, "S": 0.10, "T": 0.08, "L": 0.06},
+        "R": {"K": 0.18, "Q": 0.10, "H": 0.08, "N": 0.06},
+        "N": {"D": 0.15, "S": 0.12, "K": 0.08, "H": 0.06, "Q": 0.05},
+        "D": {"E": 0.18, "N": 0.15, "Q": 0.06, "S": 0.05},
+        "C": {"S": 0.08, "A": 0.05},
+        "E": {"D": 0.18, "Q": 0.12, "K": 0.08, "N": 0.05},
+        "Q": {"E": 0.12, "K": 0.10, "R": 0.08, "N": 0.06, "H": 0.05},
+        "G": {"A": 0.12, "S": 0.08, "N": 0.05},
+        "H": {"N": 0.10, "Q": 0.08, "Y": 0.06, "R": 0.05},
+        "I": {"V": 0.18, "L": 0.15, "M": 0.10, "F": 0.05},
+        "L": {"I": 0.15, "V": 0.12, "M": 0.10, "F": 0.08},
+        "K": {"R": 0.18, "Q": 0.10, "N": 0.08, "E": 0.06},
+        "M": {"L": 0.12, "I": 0.10, "V": 0.08},
+        "F": {"Y": 0.15, "W": 0.10, "L": 0.08, "I": 0.05},
+        "P": {"A": 0.08, "S": 0.06, "T": 0.05},
+        "S": {"T": 0.15, "A": 0.12, "N": 0.10, "G": 0.08},
+        "T": {"S": 0.15, "A": 0.10, "V": 0.06, "N": 0.05},
+        "W": {"F": 0.10, "Y": 0.08},
+        "Y": {"F": 0.15, "H": 0.08, "W": 0.06},
+        "V": {"I": 0.18, "L": 0.15, "A": 0.10, "M": 0.06},
     }
 
     def __init__(self, model_name: str = "esm2_t6_8M"):
@@ -102,14 +101,17 @@ class ProteinLanguageModel:
         embedding = self.get_embedding(sequence)
         return np.mean(embedding, axis=0)
 
-    def predict_mutation_effect(self, sequence: str, position: int,
-                                 wt_aa: str, mt_aa: str) -> dict:
+    def predict_mutation_effect(
+        self, sequence: str, position: int, wt_aa: str, mt_aa: str
+    ) -> dict:
         """
         Predict the effect of a single mutation using log-likelihood ratio.
 
         Returns dict with scores for fitness, stability, and functional impact.
         """
-        rng = random.Random(self._get_seed(f"{sequence[:20]}_{position}_{wt_aa}_{mt_aa}"))
+        rng = random.Random(
+            self._get_seed(f"{sequence[:20]}_{position}_{wt_aa}_{mt_aa}")
+        )
 
         # Base score from substitution matrix
         sub_probs = self.SUBSTITUTION_PROBS.get(wt_aa, {})
@@ -138,7 +140,27 @@ class ProteinLanguageModel:
 
         # Escape potential
         escape_potential = 0.0
-        ace2_contacts = {417, 446, 449, 453, 455, 456, 475, 476, 484, 486, 487, 489, 493, 496, 498, 500, 501, 502, 505}
+        ace2_contacts = {
+            417,
+            446,
+            449,
+            453,
+            455,
+            456,
+            475,
+            476,
+            484,
+            486,
+            487,
+            489,
+            493,
+            496,
+            498,
+            500,
+            501,
+            502,
+            505,
+        }
         if position in ace2_contacts:
             escape_potential = 0.3 + rng.uniform(0.1, 0.5)
 

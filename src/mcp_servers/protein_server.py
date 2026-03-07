@@ -7,9 +7,9 @@ import json
 import logging
 import random
 
-from src.ml.protein_lm import ProteinLanguageModel
-from src.ml.immune_escape import ImmuneEscapeModel
 from src.ingestion.sequence_ingestion import REFERENCE_SPIKE
+from src.ml.immune_escape import ImmuneEscapeModel
+from src.ml.protein_lm import ProteinLanguageModel
 
 logger = logging.getLogger(__name__)
 
@@ -51,7 +51,10 @@ class ProteinMCPServer:
                 "inputSchema": {
                     "type": "object",
                     "properties": {
-                        "sequence": {"type": "string", "description": "Amino acid sequence"},
+                        "sequence": {
+                            "type": "string",
+                            "description": "Amino acid sequence",
+                        },
                     },
                     "required": ["sequence"],
                 },
@@ -85,7 +88,10 @@ class ProteinMCPServer:
                     "type": "object",
                     "properties": {
                         "position": {"type": "integer"},
-                        "wt_aa": {"type": "string", "description": "Wild-type amino acid"},
+                        "wt_aa": {
+                            "type": "string",
+                            "description": "Wild-type amino acid",
+                        },
                         "mt_aa": {"type": "string", "description": "Mutant amino acid"},
                     },
                     "required": ["position", "wt_aa", "mt_aa"],
@@ -120,7 +126,9 @@ class ProteinMCPServer:
 
         try:
             result = handler(**arguments)
-            return {"content": [{"type": "text", "text": json.dumps(result, default=str)}]}
+            return {
+                "content": [{"type": "text", "text": json.dumps(result, default=str)}]
+            }
         except Exception as e:
             logger.error(f"Tool {tool_name} failed: {e}")
             return {"error": str(e)}
@@ -149,11 +157,15 @@ class ProteinMCPServer:
         return {
             "sequence_length": seq_len,
             "average_pLDDT": round(avg_plddt, 2),
-            "confidence": "HIGH" if avg_plddt > 80 else "MEDIUM" if avg_plddt > 60 else "LOW",
+            "confidence": (
+                "HIGH" if avg_plddt > 80 else "MEDIUM" if avg_plddt > 60 else "LOW"
+            ),
             "domain_scores": {
                 "NTD (13-305)": round(sum(plddt_scores[12:305]) / 293, 2),
                 "RBD (319-541)": round(sum(plddt_scores[318:541]) / 223, 2),
-                "S2 (686-1273)": round(sum(plddt_scores[685:]) / max(1, len(plddt_scores) - 685), 2),
+                "S2 (686-1273)": round(
+                    sum(plddt_scores[685:]) / max(1, len(plddt_scores) - 685), 2
+                ),
             },
             "plddt_histogram": {
                 ">90 (very high)": sum(1 for s in plddt_scores if s > 90),
@@ -172,22 +184,29 @@ class ProteinMCPServer:
 
         # ACE2 binding is correlated with fitness at RBD positions
         ace2_kd = 10.0 * (1.0 + rng.gauss(0, 0.3))  # nM, lower = tighter binding
-        fold_change = 1.0 + fitness["average_fitness_per_mutation"] * 0.5 + rng.gauss(0, 0.2)
+        fold_change = (
+            1.0 + fitness["average_fitness_per_mutation"] * 0.5 + rng.gauss(0, 0.2)
+        )
 
         return {
             "predicted_kd_nm": round(ace2_kd / max(0.1, fold_change), 4),
             "reference_kd_nm": 10.0,
             "fold_change": round(fold_change, 4),
-            "binding_strength": "ENHANCED" if fold_change > 1.2 else "SIMILAR" if fold_change > 0.8 else "REDUCED",
+            "binding_strength": (
+                "ENHANCED"
+                if fold_change > 1.2
+                else "SIMILAR" if fold_change > 0.8 else "REDUCED"
+            ),
             "total_mutations": fitness["total_mutations"],
-            "rbd_mutations": sum(1 for e in fitness["mutation_effects"]
-                                  if e.get("position_importance", 0) > 1.3),
+            "rbd_mutations": sum(
+                1
+                for e in fitness["mutation_effects"]
+                if e.get("position_importance", 0) > 1.3
+            ),
             "prediction_confidence": round(0.7 + rng.uniform(0, 0.25), 4),
         }
 
     def _analyze_epitopes(self, sequence: str) -> dict:
-        """Map antibody epitope regions."""
-        rng = random.Random(hash(sequence[:50]))
 
         epitope_classes = {
             "Class 1 (ACE2-blocking)": {
@@ -203,7 +222,21 @@ class ProteinMCPServer:
                 "description": "Outside RBM, important for sotrovimab-like antibodies",
             },
             "Class 4 (Cryptic)": {
-                "positions": [369, 371, 373, 375, 376, 377, 378, 380, 381, 383, 384, 385, 386],
+                "positions": [
+                    369,
+                    371,
+                    373,
+                    375,
+                    376,
+                    377,
+                    378,
+                    380,
+                    381,
+                    383,
+                    384,
+                    385,
+                    386,
+                ],
                 "description": "Cryptic epitope, exposed only in up conformation",
             },
         }
@@ -218,21 +251,29 @@ class ProteinMCPServer:
                             f"{REFERENCE_SPIKE[pos - 1]}{pos}{sequence[pos - 1]}"
                         )
 
-            preservation = 1.0 - (len(mutations_at_epitope) / len(cls_data["positions"]))
+            preservation = 1.0 - (
+                len(mutations_at_epitope) / len(cls_data["positions"])
+            )
             result[cls_name] = {
                 "description": cls_data["description"],
                 "total_positions": len(cls_data["positions"]),
                 "mutated_positions": len(mutations_at_epitope),
                 "mutations": mutations_at_epitope,
                 "epitope_preservation": round(preservation, 4),
-                "predicted_ab_binding": "MAINTAINED" if preservation > 0.7 else "REDUCED" if preservation > 0.4 else "DISRUPTED",
+                "predicted_ab_binding": (
+                    "MAINTAINED"
+                    if preservation > 0.7
+                    else "REDUCED" if preservation > 0.4 else "DISRUPTED"
+                ),
             }
 
         return {"epitope_analysis": result}
 
     def _predict_mutation_effect(self, position: int, wt_aa: str, mt_aa: str) -> dict:
         """Predict effect of a single mutation."""
-        return self.protein_lm.predict_mutation_effect(REFERENCE_SPIKE, position, wt_aa, mt_aa)
+        return self.protein_lm.predict_mutation_effect(
+            REFERENCE_SPIKE, position, wt_aa, mt_aa
+        )
 
     def _compute_similarity(self, sequence1: str, sequence2: str) -> dict:
         """Compute embedding-based sequence similarity."""
@@ -240,14 +281,18 @@ class ProteinMCPServer:
 
         # Also compute simple sequence identity
         min_len = min(len(sequence1), len(sequence2))
-        identity = sum(1 for i in range(min_len) if sequence1[i] == sequence2[i]) / max(min_len, 1)
+        identity = sum(1 for i in range(min_len) if sequence1[i] == sequence2[i]) / max(
+            min_len, 1
+        )
 
         return {
             "embedding_cosine_similarity": round(similarity, 6),
             "sequence_identity": round(identity, 6),
             "sequence_length_1": len(sequence1),
             "sequence_length_2": len(sequence2),
-            "num_differences": sum(1 for i in range(min_len) if sequence1[i] != sequence2[i]),
+            "num_differences": sum(
+                1 for i in range(min_len) if sequence1[i] != sequence2[i]
+            ),
         }
 
 

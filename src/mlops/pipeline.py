@@ -3,10 +3,10 @@ ORACLE — MLOps Pipeline
 Experiment tracking, model registry, drift detection, and automated retraining.
 """
 
+import hashlib
 import json
 import logging
 import time
-import hashlib
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
@@ -20,6 +20,7 @@ class ExperimentTracker:
     def __init__(self, tracking_dir: str = None):
         if tracking_dir is None:
             from config.settings import BASE_DIR
+
             tracking_dir = str(BASE_DIR / "data" / "experiments")
         self.tracking_dir = Path(tracking_dir)
         self.tracking_dir.mkdir(parents=True, exist_ok=True)
@@ -29,7 +30,9 @@ class ExperimentTracker:
 
     def start_run(self, experiment_name: str, run_name: str = None) -> dict:
         """Start a new experiment run."""
-        run_id = hashlib.md5(f"{experiment_name}_{time.time()}".encode()).hexdigest()[:12]
+        run_id = hashlib.md5(f"{experiment_name}_{time.time()}".encode()).hexdigest()[
+            :12
+        ]
         self.active_run = {
             "run_id": run_id,
             "experiment_name": experiment_name,
@@ -61,11 +64,13 @@ class ExperimentTracker:
     def log_artifact(self, artifact_path: str, artifact_type: str = "model"):
         """Log an artifact for the active run."""
         if self.active_run:
-            self.active_run["artifacts"].append({
-                "path": artifact_path,
-                "type": artifact_type,
-                "timestamp": datetime.utcnow().isoformat(),
-            })
+            self.active_run["artifacts"].append(
+                {
+                    "path": artifact_path,
+                    "type": artifact_type,
+                    "timestamp": datetime.utcnow().isoformat(),
+                }
+            )
 
     def set_tags(self, tags: dict):
         """Set tags for the active run."""
@@ -106,7 +111,11 @@ class ExperimentTracker:
             values = run["metrics"][metric_name]
             return values[-1]["value"] if values else 0
 
-        return max(valid_runs, key=get_metric_value) if maximize else min(valid_runs, key=get_metric_value)
+        return (
+            max(valid_runs, key=get_metric_value)
+            if maximize
+            else min(valid_runs, key=get_metric_value)
+        )
 
 
 class ModelRegistry:
@@ -115,6 +124,7 @@ class ModelRegistry:
     def __init__(self, registry_dir: str = None):
         if registry_dir is None:
             from config.settings import BASE_DIR
+
             registry_dir = str(BASE_DIR / "model_registry")
         self.registry_dir = Path(registry_dir)
         self.registry_dir.mkdir(parents=True, exist_ok=True)
@@ -135,8 +145,14 @@ class ModelRegistry:
         with open(registry_file, "w") as f:
             json.dump(self.models, f, indent=2)
 
-    def register_model(self, model_name: str, version: str, run_id: str,
-                        metrics: dict = None, stage: str = "staging") -> dict:
+    def register_model(
+        self,
+        model_name: str,
+        version: str,
+        run_id: str,
+        metrics: dict = None,
+        stage: str = "staging",
+    ) -> dict:
         """Register a new model version."""
         if model_name not in self.models:
             self.models[model_name] = []
@@ -155,7 +171,9 @@ class ModelRegistry:
         logger.info(f"Registered {model_name} v{version} (stage: {stage})")
         return model_version
 
-    def promote_model(self, model_name: str, version: str, to_stage: str = "production") -> dict:
+    def promote_model(
+        self, model_name: str, version: str, to_stage: str = "production"
+    ) -> dict:
         """Promote a model version to a new stage."""
         if model_name not in self.models:
             return {"error": f"Model {model_name} not found"}
@@ -218,7 +236,9 @@ class DriftDetector:
             return {"drift_detected": False, "reason": "No reference distribution set"}
 
         psi = self._compute_psi(self.reference_distribution, current_distribution)
-        kl_div = self._compute_kl_divergence(self.reference_distribution, current_distribution)
+        kl_div = self._compute_kl_divergence(
+            self.reference_distribution, current_distribution
+        )
 
         drift_detected = psi > self.threshold
 
@@ -234,7 +254,9 @@ class DriftDetector:
 
         self.drift_history.append(result)
         if drift_detected:
-            logger.warning(f"DRIFT DETECTED: PSI={psi:.4f} (threshold={self.threshold})")
+            logger.warning(
+                f"DRIFT DETECTED: PSI={psi:.4f} (threshold={self.threshold})"
+            )
 
         return result
 
@@ -252,6 +274,7 @@ class DriftDetector:
             p_norm = p / total_p
             q_norm = q / total_q
             import math
+
             psi += (q_norm - p_norm) * math.log(q_norm / p_norm)
         return abs(psi)
 
@@ -259,6 +282,7 @@ class DriftDetector:
     def _compute_kl_divergence(reference: dict, current: dict) -> float:
         """Compute KL Divergence."""
         import math
+
         all_keys = set(reference.keys()) | set(current.keys())
         total_p = sum(max(reference.get(k, 0), 0.0001) for k in all_keys)
         total_q = sum(max(current.get(k, 0), 0.0001) for k in all_keys)
@@ -281,7 +305,9 @@ class RetrainingPipeline:
         self.retraining_history: list[dict] = []
         logger.info("RetrainingPipeline initialized")
 
-    def check_and_retrain(self, current_data: dict, model_name: str = "evolution_forecaster") -> dict:
+    def check_and_retrain(
+        self, current_data: dict, model_name: str = "evolution_forecaster"
+    ) -> dict:
         """Check for drift and trigger retraining if needed."""
         # Check drift
         lineage_dist = current_data.get("lineage_distribution", {})
@@ -298,44 +324,57 @@ class RetrainingPipeline:
         logger.info("Drift detected — triggering model retraining")
         return self.retrain(current_data, model_name, drift_result)
 
-    def retrain(self, training_data: dict, model_name: str,
-                drift_info: dict = None) -> dict:
+    def retrain(
+        self, training_data: dict, model_name: str, drift_info: dict = None
+    ) -> dict:
         """Execute a retraining run."""
         import random
+
         rng = random.Random(42)
 
         # Start experiment tracking
-        run = self.tracker.start_run(
+        self.tracker.start_run(
             experiment_name=f"oracle-{model_name}",
             run_name=f"retrain_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}",
         )
 
-        self.tracker.log_params({
-            "model_name": model_name,
-            "trigger": "drift_detection" if drift_info else "manual",
-            "training_samples": training_data.get("total_sequences", 0),
-        })
+        self.tracker.log_params(
+            {
+                "model_name": model_name,
+                "trigger": "drift_detection" if drift_info else "manual",
+                "training_samples": training_data.get("total_sequences", 0),
+            }
+        )
 
         # Simulate training epochs
         for epoch in range(10):
-            self.tracker.log_metrics({
-                "loss": round(1.0 / (epoch + 1) + rng.gauss(0, 0.02), 4),
-                "accuracy": round(min(0.95, 0.5 + 0.05 * epoch + rng.gauss(0, 0.01)), 4),
-                "f1_score": round(min(0.93, 0.45 + 0.05 * epoch + rng.gauss(0, 0.01)), 4),
-            }, step=epoch)
+            self.tracker.log_metrics(
+                {
+                    "loss": round(1.0 / (epoch + 1) + rng.gauss(0, 0.02), 4),
+                    "accuracy": round(
+                        min(0.95, 0.5 + 0.05 * epoch + rng.gauss(0, 0.01)), 4
+                    ),
+                    "f1_score": round(
+                        min(0.93, 0.45 + 0.05 * epoch + rng.gauss(0, 0.01)), 4
+                    ),
+                },
+                step=epoch,
+            )
 
-        self.tracker.set_tags({
-            "drift_psi": str(drift_info.get("psi_score", "N/A")) if drift_info else "N/A",
-            "framework": "pytorch",
-        })
+        self.tracker.set_tags(
+            {
+                "drift_psi": (
+                    str(drift_info.get("psi_score", "N/A")) if drift_info else "N/A"
+                ),
+                "framework": "pytorch",
+            }
+        )
 
         completed_run = self.tracker.end_run(status="completed")
 
         # Register model
         version = f"v{len(self.registry.models.get(model_name, [])) + 1}.0"
-        final_metrics = {
-            k: v[-1]["value"] for k, v in completed_run["metrics"].items()
-        }
+        final_metrics = {k: v[-1]["value"] for k, v in completed_run["metrics"].items()}
         self.registry.register_model(
             model_name=model_name,
             version=version,

@@ -7,7 +7,7 @@ import logging
 import time
 from abc import ABC, abstractmethod
 from datetime import datetime
-from typing import Any, Optional
+from typing import Optional
 
 from src.core.models import AgentMessage, AgentStatus
 
@@ -40,13 +40,15 @@ class BaseAgent(ABC):
     @abstractmethod
     def execute(self, input_data: dict) -> dict:
         """Execute the agent's primary task. Must be implemented by subclasses."""
-        pass
 
     def run(self, input_data: dict, max_retries: int = 3) -> dict:
         """Run the agent with error handling and retries."""
         self.status = AgentStatus.RUNNING
         self.start_time = time.time()
-        self._log("STARTED", f"Agent beginning execution with input keys: {list(input_data.keys())}")
+        self._log(
+            "STARTED",
+            f"Agent beginning execution with input keys: {list(input_data.keys())}",
+        )
 
         for attempt in range(max_retries):
             try:
@@ -93,7 +95,9 @@ class BaseAgent(ABC):
     def receive_message(self, message: AgentMessage):
         """Receive a message from another agent."""
         self.messages_in.append(message)
-        self._log("MSG_RECEIVED", f"Message from {message.sender}: {message.message_type}")
+        self._log(
+            "MSG_RECEIVED", f"Message from {message.sender}: {message.message_type}"
+        )
 
     def _log(self, event: str, message: str):
         """Log an agent event."""

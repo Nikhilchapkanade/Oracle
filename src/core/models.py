@@ -4,13 +4,14 @@ Pydantic models for viral sequences, mutations, lineages, and analysis results.
 """
 
 from __future__ import annotations
+
+from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
 from typing import Optional
-from dataclasses import dataclass, field
-
 
 # ─────────────────────────── Enums ───────────────────────────
+
 
 class MutationType(str, Enum):
     SYNONYMOUS = "synonymous"
@@ -48,9 +49,11 @@ class AgentStatus(str, Enum):
 
 # ─────────────────────────── Core Models ───────────────────────────
 
+
 @dataclass
 class Mutation:
     """A single amino acid mutation in a viral protein."""
+
     position: int
     reference_aa: str
     mutant_aa: str
@@ -73,6 +76,7 @@ class Mutation:
 @dataclass
 class ViralSequence:
     """A viral genomic sequence with metadata."""
+
     id: str
     sequence: str
     lineage: str
@@ -97,6 +101,7 @@ class ViralSequence:
 @dataclass
 class Lineage:
     """A viral lineage/variant classification."""
+
     name: str
     parent_lineage: Optional[str] = None
     who_label: Optional[str] = None
@@ -118,6 +123,7 @@ class Lineage:
 @dataclass
 class PhylogeneticNode:
     """A node in a phylogenetic tree."""
+
     id: str
     name: str
     branch_length: float = 0.0
@@ -136,6 +142,7 @@ class PhylogeneticNode:
 @dataclass
 class MutationPrediction:
     """A predicted future mutation with probability."""
+
     position: int
     current_aa: str
     predicted_aa: str
@@ -153,6 +160,7 @@ class MutationPrediction:
 @dataclass
 class EscapeScore:
     """Immune escape analysis result for a variant."""
+
     variant_id: str
     lineage: str
     overall_escape: float  # 0-1, 1 = complete escape
@@ -177,6 +185,7 @@ class EscapeScore:
 @dataclass
 class VaccineCandidate:
     """A proposed vaccine antigen candidate."""
+
     id: str
     sequence: str
     target_mutations: list[str]
@@ -202,6 +211,7 @@ class VaccineCandidate:
 @dataclass
 class AgentMessage:
     """Message passed between agents in the pipeline."""
+
     sender: str
     receiver: str
     content: dict
@@ -213,6 +223,7 @@ class AgentMessage:
 @dataclass
 class AgentReport:
     """Structured report from the agent pipeline."""
+
     report_id: str
     timestamp: datetime
     title: str
@@ -230,6 +241,7 @@ class AgentReport:
 @dataclass
 class PipelineMetrics:
     """Metrics for the agent pipeline execution."""
+
     pipeline_id: str
     start_time: datetime
     end_time: Optional[datetime] = None

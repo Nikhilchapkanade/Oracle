@@ -5,11 +5,8 @@ Transformer-based model that predicts likely future mutations based on historica
 
 import logging
 import random
-import math
 from collections import Counter, defaultdict
-from typing import Optional
 
-import numpy as np
 
 from src.core.models import MutationPrediction, ViralSequence
 
@@ -24,9 +21,39 @@ class EvolutionForecaster:
 
     AMINO_ACIDS = list("ACDEFGHIKLMNPQRSTVWY")
     CRITICAL_POSITIONS = [
-        339, 346, 371, 373, 375, 376, 405, 408, 417, 440, 444, 445, 446,
-        452, 460, 477, 478, 484, 486, 490, 493, 496, 498, 501, 505,
-        614, 655, 679, 681, 764, 796, 950, 969,
+        339,
+        346,
+        371,
+        373,
+        375,
+        376,
+        405,
+        408,
+        417,
+        440,
+        444,
+        445,
+        446,
+        452,
+        460,
+        477,
+        478,
+        484,
+        486,
+        490,
+        493,
+        496,
+        498,
+        501,
+        505,
+        614,
+        655,
+        679,
+        681,
+        764,
+        796,
+        950,
+        969,
     ]
 
     def __init__(self, hidden_dim: int = 256, num_heads: int = 8, num_layers: int = 4):
@@ -75,7 +102,7 @@ class EvolutionForecaster:
         for lineage, mutation_sets in lineage_mutations.items():
             for mut_set in mutation_sets:
                 for i, m1 in enumerate(mut_set):
-                    for m2 in mut_set[i + 1:]:
+                    for m2 in mut_set[i + 1 :]:
                         if m1 in self.transition_matrix:
                             self.transition_matrix[m1][m2] += 1
                         if m2 in self.transition_matrix:
@@ -94,7 +121,9 @@ class EvolutionForecaster:
         logger.info(f"Training complete: {metrics}")
         return metrics
 
-    def predict(self, top_k: int = 20, timeframe_days: int = 90) -> list[MutationPrediction]:
+    def predict(
+        self, top_k: int = 20, timeframe_days: int = 90
+    ) -> list[MutationPrediction]:
         """
         Predict the most likely future mutations.
 
@@ -106,7 +135,7 @@ class EvolutionForecaster:
             return []
 
         predictions = []
-        rng = random.Random(42)
+        random.Random(42)
 
         for position in self.CRITICAL_POSITIONS:
             aa_counts = self.position_frequencies.get(position, {})
@@ -124,7 +153,9 @@ class EvolutionForecaster:
 
                 # Compute prediction probability
                 base_prob = observed_freq * 0.4  # Historical frequency contribution
-                novel_prob = pressure * importance * 0.6  # Evolutionary pressure contribution
+                novel_prob = (
+                    pressure * importance * 0.6
+                )  # Evolutionary pressure contribution
                 probability = min(0.95, base_prob + novel_prob)
 
                 if probability > 0.05:  # Only keep meaningful predictions
@@ -135,7 +166,9 @@ class EvolutionForecaster:
                         continue  # Skip if same as most common
 
                     # Fitness impact estimation
-                    fitness_impact = self._estimate_fitness_impact(position, current_aa, aa)
+                    fitness_impact = self._estimate_fitness_impact(
+                        position, current_aa, aa
+                    )
                     escape_impact = self._estimate_escape_impact(position, aa)
 
                     pred = MutationPrediction(
@@ -148,7 +181,7 @@ class EvolutionForecaster:
                         escape_impact=round(escape_impact, 4),
                         confidence_interval=(
                             round(max(0, probability - 0.15), 4),
-                            round(min(1, probability + 0.15), 4)
+                            round(min(1, probability + 0.15), 4),
                         ),
                     )
                     predictions.append(pred)
@@ -157,8 +190,9 @@ class EvolutionForecaster:
         predictions.sort(key=lambda p: p.probability, reverse=True)
         return predictions[:top_k]
 
-    def predict_variant_trajectory(self, current_mutations: list[str],
-                                     steps: int = 3) -> list[dict]:
+    def predict_variant_trajectory(
+        self, current_mutations: list[str], steps: int = 3
+    ) -> list[dict]:
         """
         Predict evolutionary trajectory: what mutations will accumulate over time.
         """
@@ -180,11 +214,13 @@ class EvolutionForecaster:
                 best_aa = aa_counts.most_common(1)[0] if aa_counts else None
                 if best_aa:
                     prob = rng.uniform(0.05, 0.4) * self._position_importance(pos)
-                    step_predictions.append({
-                        "position": pos,
-                        "amino_acid": best_aa[0],
-                        "probability": round(prob, 4),
-                    })
+                    step_predictions.append(
+                        {
+                            "position": pos,
+                            "amino_acid": best_aa[0],
+                            "probability": round(prob, 4),
+                        }
+                    )
 
             step_predictions.sort(key=lambda x: x["probability"], reverse=True)
             top_preds = step_predictions[:5]
@@ -193,13 +229,15 @@ class EvolutionForecaster:
             for p in top_preds[:2]:
                 accumulated.add(f"X{p['position']}{p['amino_acid']}")
 
-            trajectory.append({
-                "step": step + 1,
-                "timeframe_days": (step + 1) * 90,
-                "predicted_new_mutations": top_preds,
-                "cumulative_mutations": len(accumulated),
-                "estimated_fitness_change": round(rng.uniform(-0.5, 1.5), 4),
-            })
+            trajectory.append(
+                {
+                    "step": step + 1,
+                    "timeframe_days": (step + 1) * 90,
+                    "predicted_new_mutations": top_preds,
+                    "cumulative_mutations": len(accumulated),
+                    "estimated_fitness_change": round(rng.uniform(-0.5, 1.5), 4),
+                }
+            )
 
         return trajectory
 
@@ -208,7 +246,27 @@ class EvolutionForecaster:
         rng = random.Random(position * 100 + ord(amino_acid))
 
         # ACE2 contact sites under strong selection
-        ace2_contacts = {417, 446, 449, 453, 455, 456, 475, 476, 484, 486, 487, 489, 493, 496, 498, 500, 501, 502, 505}
+        ace2_contacts = {
+            417,
+            446,
+            449,
+            453,
+            455,
+            456,
+            475,
+            476,
+            484,
+            486,
+            487,
+            489,
+            493,
+            496,
+            498,
+            500,
+            501,
+            502,
+            505,
+        }
         if position in ace2_contacts:
             return rng.uniform(0.15, 0.45)
 
@@ -233,7 +291,9 @@ class EvolutionForecaster:
             return 1.4
         return 0.8
 
-    def _estimate_fitness_impact(self, position: int, current_aa: str, new_aa: str) -> float:
+    def _estimate_fitness_impact(
+        self, position: int, current_aa: str, new_aa: str
+    ) -> float:
         """Estimate fitness impact of a mutation."""
         rng = random.Random(position + ord(current_aa) + ord(new_aa))
         base = rng.gauss(0.0, 0.5)
@@ -244,7 +304,22 @@ class EvolutionForecaster:
     def _estimate_escape_impact(self, position: int, new_aa: str) -> float:
         """Estimate immune escape impact."""
         rng = random.Random(position * 7 + ord(new_aa))
-        epitope_positions = {339, 346, 440, 443, 444, 445, 446, 484, 486, 490, 493, 496, 498, 501}
+        epitope_positions = {
+            339,
+            346,
+            440,
+            443,
+            444,
+            445,
+            446,
+            484,
+            486,
+            490,
+            493,
+            496,
+            498,
+            501,
+        }
         if position in epitope_positions:
             return rng.uniform(0.2, 0.8)
         return rng.uniform(0.0, 0.2)
@@ -259,7 +334,6 @@ class EvolutionForecaster:
             total = sum(counts.values())
             if total > 0:
                 matrix[pos] = {
-                    aa: round(count / total, 6)
-                    for aa, count in counts.most_common()
+                    aa: round(count / total, 6) for aa, count in counts.most_common()
                 }
         return matrix
